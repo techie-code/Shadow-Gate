@@ -1,0 +1,29 @@
+# ShadowGate - AI-powered Digital Twin Testing Platform
+# Python 3.14 compatible
+
+# Core AI
+anthropic>=0.25.0
+langchain>=0.2.0
+langchain-anthropic>=0.1.0
+langchain-community>=0.2.0
+
+# Data
+pandas>=2.2.0
+numpy>=1.26.0
+faker>=24.0.0
+
+# Database
+sqlalchemy>=2.0.0
+
+# API & Notifications
+requests>=2.31.0
+python-dotenv>=1.0.0
+
+# Utilities
+colorama>=0.4.6
+rich>=13.7.0
+tabulate>=0.9.0
+pydantic>=2.6.0
+
+# Testing
+pytest>=8.0.0
