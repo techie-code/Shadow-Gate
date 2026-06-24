@@ -1,37 +1,45 @@
 """
 ShadowGate - Agent 1: Environment Simulator
-The most impressive agent — reads plain English automation requirements
-and generates a complete simulated test environment using Gemini AI.
+Reads plain English automation requirements and generates test scenarios.
+Caches scenarios to avoid hitting API rate limits.
 """
+
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-
 import json
-import os
 from datetime import datetime
 from ai_client import ask_ai
 from database import get_connection
 
 
 class EnvironmentSimulatorAgent:
-    """
-    Takes plain English description of an automation
-    and generates complete test scenarios using AI.
-    """
 
     def __init__(self):
         self.name = "EnvironmentSimulator"
 
     def generate_test_scenarios(self, automation_name, requirements_text):
         """
-        Main method — reads requirements, generates test scenarios via Gemini.
-        Returns a list of test scenarios.
+        Generates test scenarios from plain English requirements.
+        Uses cached scenarios if they already exist to save API tokens.
         """
+
+        # Check cache first
+        scenario_file = f"tests/generated/{automation_name}_scenarios.json"
+        if os.path.exists(scenario_file):
+            print(f"\n🏗️  Environment Simulator Agent")
+            print(f"📂 Loading existing scenarios for: {automation_name}")
+            with open(scenario_file) as f:
+                scenarios = json.load(f)
+            print(f"✅ Loaded {len(scenarios.get('scenarios', []))} scenarios from cache")
+            self._print_summary(scenarios)
+            return scenarios
+
+        # Generate new scenarios via AI
         print(f"\n🏗️  Environment Simulator Agent")
         print(f"📖 Reading requirements for: {automation_name}")
-        print(f"🤖 Asking Groq to generate test scenarios...\n")
+        print(f"🤖 Asking Groq (Llama 3.3) to generate test scenarios...\n")
 
         system_prompt = """You are an expert QA engineer specializing in enterprise automation testing.
 Your job is to read automation requirements and generate comprehensive test scenarios.
@@ -72,7 +80,6 @@ Respond with ONLY this JSON structure, no other text:
         try:
             response = ask_ai(system_prompt, user_prompt, temperature=0.3)
 
-            # Clean response — remove any markdown if present
             clean = response.strip()
             if clean.startswith("```"):
                 clean = clean.split("```")[1]
@@ -81,28 +88,21 @@ Respond with ONLY this JSON structure, no other text:
             clean = clean.strip()
 
             scenarios = json.loads(clean)
-
-            # Save to tests/generated folder
             self._save_scenarios(automation_name, scenarios)
-
-            # Log to audit
             self._log_to_audit(automation_name, len(scenarios.get("scenarios", [])))
 
             print(f"✅ Generated {len(scenarios.get('scenarios', []))} test scenarios")
             self._print_summary(scenarios)
-
             return scenarios
 
         except json.JSONDecodeError as e:
             print(f"❌ Failed to parse AI response as JSON: {e}")
-            print(f"Raw response: {response[:200]}...")
             return None
         except Exception as e:
             print(f"❌ Environment Simulator failed: {e}")
             return None
 
     def _save_scenarios(self, automation_name, scenarios):
-        """Save generated scenarios to tests/generated folder."""
         os.makedirs("tests/generated", exist_ok=True)
         filename = f"tests/generated/{automation_name}_scenarios.json"
         with open(filename, "w") as f:
@@ -110,7 +110,6 @@ Respond with ONLY this JSON structure, no other text:
         print(f"💾 Scenarios saved to {filename}")
 
     def _log_to_audit(self, automation_name, scenario_count):
-        """Log this agent action to the audit trail."""
         try:
             conn = get_connection()
             cursor = conn.cursor()
@@ -129,10 +128,9 @@ Respond with ONLY this JSON structure, no other text:
             conn.commit()
             conn.close()
         except Exception:
-            pass  # Don't fail if audit log fails
+            pass
 
     def _print_summary(self, scenarios):
-        """Print a nice summary of generated scenarios."""
         scenario_list = scenarios.get("scenarios", [])
         happy = [s for s in scenario_list if s.get("type") == "happy_path"]
         edge = [s for s in scenario_list if s.get("type") == "edge_case"]
@@ -151,13 +149,10 @@ Respond with ONLY this JSON structure, no other text:
 
 
 if __name__ == "__main__":
-    # Test with loan processing requirements
     from mock_automations.loan_processing.automation import REQUIREMENTS
-
     agent = EnvironmentSimulatorAgent()
     scenarios = agent.generate_test_scenarios("loan_processing", REQUIREMENTS)
-
     if scenarios:
         print(f"\n🎉 Environment Simulator Agent working perfectly!")
     else:
-        print(f"\n❌ Something went wrong — check your GEMINI_API_KEY in .env")
+        print(f"\n❌ Something went wrong — check your GROQ_API_KEY in .env")

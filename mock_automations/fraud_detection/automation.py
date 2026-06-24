@@ -3,16 +3,15 @@ ShadowGate - Mock Automation 2: Fraud Detection
 Simulates a UiPath automation that monitors transactions for fraud.
 """
 
-import sqlite3
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 from datetime import datetime
 from database import get_connection
 
 
 class FraudDetectionAutomation:
-    """
-    Simulates the fraud detection automation.
-    Monitors transactions, flags suspicious activity, escalates confirmed fraud.
-    """
 
     def __init__(self):
         self.name = "fraud_detection"
@@ -24,37 +23,34 @@ class FraudDetectionAutomation:
         self.errors = []
 
     def validate_transaction(self, txn):
-        """Validate a transaction record."""
-        if txn["transaction_id"] is None:
+        if txn.get("transaction_id") is None:
             return False, "Missing transaction ID"
-        if txn["customer_id"] is None:
+        if txn.get("customer_id") is None:
             return False, "Missing customer ID"
-        if txn["amount"] is None or txn["amount"] <= 0:
-            return False, f"Invalid amount: {txn['amount']}"
-        if txn["transaction_type"] not in ['debit', 'credit', 'transfer']:
-            return False, f"Invalid transaction type: {txn['transaction_type']}"
-        if txn["transaction_date"] == "not-a-date":
+        try:
+            if float(txn.get("amount", 0)) <= 0:
+                return False, f"Invalid amount: {txn.get('amount')}"
+        except (TypeError, ValueError):
+            return False, f"Invalid amount type: {txn.get('amount')}"
+        if txn.get("transaction_type") not in ['debit', 'credit', 'transfer']:
+            return False, f"Invalid transaction type: {txn.get('transaction_type')}"
+        date_val = txn.get("transaction_date", "")
+        if not date_val or date_val == "not-a-date" or date_val == "NOT-A-DATE":
             return False, "Malformed transaction date"
         return True, "Valid"
 
     def assess_fraud_risk(self, txn):
-        """
-        Assess fraud risk of a transaction.
-        Returns (risk_level, alert_type, description)
-        """
-        amount = txn["amount"]
-        location = txn["location"] or ""
-        merchant = txn["merchant"] or ""
-        is_fraudulent = txn["is_fraudulent"]
+        amount = float(txn.get("amount", 0))
+        location = txn.get("location") or ""
+        merchant = txn.get("merchant") or ""
+        is_fraudulent = txn.get("is_fraudulent", 0)
 
-        # High risk indicators
         high_risk_locations = ['Unknown Location', 'Moscow, RU', 'Lagos, NG']
         high_risk_merchants = ['Unknown Merchant', 'Crypto Exchange', 'Online Casino']
 
         risk_score = 0
-
         if amount > 9000:
-            risk_score += 3  # Structuring detection
+            risk_score += 3
         if location in high_risk_locations:
             risk_score += 2
         if merchant in high_risk_merchants:
@@ -63,20 +59,18 @@ class FraudDetectionAutomation:
             risk_score += 5
 
         if risk_score >= 8:
-            return "critical", "confirmed_fraud", f"Multiple high-risk indicators detected. Amount: ${amount:.2f}, Location: {location}"
+            return "critical", "confirmed_fraud", f"Multiple high-risk indicators. Amount: ${amount:.2f}, Location: {location}"
         elif risk_score >= 5:
-            return "high", "suspicious_activity", f"Suspicious transaction pattern. Amount: ${amount:.2f}, Merchant: {merchant}"
+            return "high", "suspicious_activity", f"Suspicious pattern. Amount: ${amount:.2f}, Merchant: {merchant}"
         elif risk_score >= 3:
-            return "medium", "unusual_activity", f"Unusual activity detected. Amount: ${amount:.2f}"
+            return "medium", "unusual_activity", f"Unusual activity. Amount: ${amount:.2f}"
         else:
             return "low", "routine_check", "Transaction within normal parameters"
 
     def process(self):
-        """Run the fraud detection automation."""
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Fetch recent transactions
         cursor.execute("""
             SELECT * FROM transactions
             WHERE status IN ('pending', 'completed')
@@ -90,44 +84,56 @@ class FraudDetectionAutomation:
         for txn in transactions:
             self.processed += 1
 
-            # Validate
-            is_valid, reason = self.validate_transaction(txn)
-            if not is_valid:
+            try:
+                is_valid, reason = self.validate_transaction(txn)
+                if not is_valid:
+                    self.errors.append({
+                        "transaction_id": txn.get("transaction_id"),
+                        "error": reason
+                    })
+                    continue
+
+                risk_level, alert_type, description = self.assess_fraud_risk(txn)
+
+                if risk_level in ["critical", "high"]:
+                    self.flagged += 1
+
+                    try:
+                        cursor.execute("""
+                            INSERT INTO fraud_alerts
+                            (transaction_id, alert_type, severity, description, created_at, resolved)
+                            VALUES (?, ?, ?, ?, ?, ?)
+                        """, (
+                            txn["transaction_id"],
+                            alert_type,
+                            risk_level,
+                            description,
+                            datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                            0
+                        ))
+
+                        new_status = "blocked" if risk_level == "critical" else "flagged"
+                        cursor.execute("""
+                            UPDATE transactions SET status = ? WHERE transaction_id = ?
+                        """, (new_status, txn["transaction_id"]))
+
+                        if risk_level == "critical":
+                            self.confirmed_fraud += 1
+                            self.escalated += 1
+
+                    except Exception as db_err:
+                        self.errors.append({
+                            "transaction_id": txn.get("transaction_id"),
+                            "error": f"DB update failed: {db_err}"
+                        })
+                        continue
+
+            except Exception as e:
                 self.errors.append({
-                    "transaction_id": txn["transaction_id"],
-                    "error": reason
+                    "transaction_id": txn.get("transaction_id", "unknown"),
+                    "error": str(e)
                 })
                 continue
-
-            # Assess risk
-            risk_level, alert_type, description = self.assess_fraud_risk(txn)
-
-            if risk_level in ["critical", "high"]:
-                self.flagged += 1
-
-                # Create fraud alert
-                cursor.execute("""
-                    INSERT INTO fraud_alerts
-                    (transaction_id, alert_type, severity, description, created_at, resolved)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (
-                    txn["transaction_id"],
-                    alert_type,
-                    risk_level,
-                    description,
-                    datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                    0
-                ))
-
-                # Update transaction status
-                new_status = "blocked" if risk_level == "critical" else "flagged"
-                cursor.execute("""
-                    UPDATE transactions SET status = ? WHERE transaction_id = ?
-                """, (new_status, txn["transaction_id"]))
-
-                if risk_level == "critical":
-                    self.confirmed_fraud += 1
-                    self.escalated += 1
 
         conn.commit()
         conn.close()
@@ -145,11 +151,11 @@ class FraudDetectionAutomation:
             "confirmed_fraud": self.confirmed_fraud,
             "escalated": self.escalated,
             "errors": self.errors,
-            "fraud_rate": round(self.confirmed_fraud / max(self.processed, 1) * 100, 2)
+            "fraud_rate": round(self.confirmed_fraud / max(self.processed, 1) * 100, 2),
+            "success_rate": round((self.processed - len(self.errors)) / max(self.processed, 1) * 100, 2)
         }
 
 
-# Plain English requirements — used by Environment Simulator Agent
 REQUIREMENTS = """
 The fraud detection automation:
 - Scans all pending and completed transactions

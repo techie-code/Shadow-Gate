@@ -4,6 +4,10 @@ Simulates a UiPath automation that processes loan applications.
 This is what ShadowGate will test.
 """
 
+import sys
+import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
+
 import sqlite3
 import random
 from datetime import datetime
@@ -31,24 +35,36 @@ class LoanProcessingAutomation:
             return False, "Missing customer ID"
         if app["credit_score"] is None:
             return False, "Missing credit score"
-        if not (300 <= app["credit_score"] <= 850):
-            return False, f"Invalid credit score: {app['credit_score']}"
-        if app["annual_income"] is None or app["annual_income"] <= 0:
-            return False, f"Invalid annual income: {app['annual_income']}"
-        if app["loan_amount"] is None or app["loan_amount"] <= 0:
-            return False, f"Invalid loan amount: {app['loan_amount']}"
+        try:
+            if not (300 <= int(app["credit_score"]) <= 850):
+                return False, f"Invalid credit score: {app['credit_score']}"
+        except (TypeError, ValueError):
+            return False, f"Invalid credit score type: {app['credit_score']}"
+        if app["annual_income"] is None:
+            return False, "Missing annual income"
+        try:
+            if float(app["annual_income"]) <= 0:
+                return False, f"Invalid annual income: {app['annual_income']}"
+        except (TypeError, ValueError):
+            return False, f"Invalid annual income type: {app['annual_income']}"
+        if app["loan_amount"] is None:
+            return False, "Missing loan amount"
+        try:
+            if float(app["loan_amount"]) <= 0:
+                return False, f"Invalid loan amount: {app['loan_amount']}"
+        except (TypeError, ValueError):
+            return False, f"Invalid loan amount type: {app['loan_amount']}"
         if app["loan_type"] not in ['personal', 'home', 'auto', 'business']:
             return False, f"Invalid loan type: {app['loan_type']}"
         return True, "Valid"
 
     def make_decision(self, app):
         """Make a loan decision based on application data."""
-        credit_score = app["credit_score"]
-        income = app["annual_income"]
-        loan_amount = app["loan_amount"]
+        credit_score = int(app["credit_score"])
+        income = float(app["annual_income"])
+        loan_amount = float(app["loan_amount"])
 
-        # Debt-to-income ratio check
-        monthly_payment = loan_amount / 60  # 5 year term
+        monthly_payment = loan_amount / 60
         monthly_income = income / 12
         dti_ratio = monthly_payment / monthly_income
 
@@ -66,7 +82,6 @@ class LoanProcessingAutomation:
         conn = get_connection()
         cursor = conn.cursor()
 
-        # Fetch pending applications
         cursor.execute("""
             SELECT * FROM loan_applications WHERE status = 'pending'
         """)
@@ -78,50 +93,63 @@ class LoanProcessingAutomation:
         for app in applications:
             self.processed += 1
 
-            # Validate
-            is_valid, reason = self.validate_application(app)
+            try:
+                # Validate
+                is_valid, reason = self.validate_application(app)
 
-            if not is_valid:
+                if not is_valid:
+                    self.errors.append({
+                        "application_id": app["application_id"],
+                        "error": reason
+                    })
+                    continue
+
+                # Make decision
+                decision, explanation = self.make_decision(app)
+
+                # Update DB
+                try:
+                    cursor.execute("""
+                        UPDATE loan_applications
+                        SET status = ?, processed_by = 'automation'
+                        WHERE application_id = ?
+                    """, (decision if decision != "escalated" else "under_review", app["application_id"]))
+
+                    cursor.execute("""
+                        INSERT INTO loan_decisions
+                        (application_id, decision, reason, decided_at, decided_by)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (
+                        app["application_id"],
+                        decision,
+                        explanation,
+                        datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                        "automation" if decision != "escalated" else "pending_human_review"
+                    ))
+                except Exception as db_err:
+                    self.errors.append({
+                        "application_id": app["application_id"],
+                        "error": f"DB update failed: {db_err}"
+                    })
+                    continue
+
+                if decision == "approved":
+                    self.approved += 1
+                elif decision == "rejected":
+                    self.rejected += 1
+                else:
+                    self.escalated += 1
+
+            except Exception as e:
                 self.errors.append({
-                    "application_id": app["application_id"],
-                    "error": reason
+                    "application_id": app.get("application_id", "unknown"),
+                    "error": str(e)
                 })
                 continue
-
-            # Make decision
-            decision, explanation = self.make_decision(app)
-
-            # Update application status
-            cursor.execute("""
-                UPDATE loan_applications
-                SET status = ?, processed_by = 'automation'
-                WHERE application_id = ?
-            """, (decision if decision != "escalated" else "under_review", app["application_id"]))
-
-            # Log decision
-            cursor.execute("""
-                INSERT INTO loan_decisions
-                (application_id, decision, reason, decided_at, decided_by)
-                VALUES (?, ?, ?, ?, ?)
-            """, (
-                app["application_id"],
-                decision,
-                explanation,
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                "automation" if decision != "escalated" else "pending_human_review"
-            ))
-
-            if decision == "approved":
-                self.approved += 1
-            elif decision == "rejected":
-                self.rejected += 1
-            else:
-                self.escalated += 1
 
         conn.commit()
         conn.close()
 
-        # Summary
         print(f"✅ Approved:   {self.approved}")
         print(f"❌ Rejected:   {self.rejected}")
         print(f"👤 Escalated:  {self.escalated}")
