@@ -1,6 +1,6 @@
 """
-ShadowGate - LangChain Orchestration Layer v2
-Now includes Chaos Agent + Test Health Agent.
+ShadowGate - LangChain Orchestration Layer v3
+Week 4: Now includes Release Guardian + Deployment Readiness + Slack.
 """
 
 import sys
@@ -12,13 +12,16 @@ from agents.environment_simulator import EnvironmentSimulatorAgent
 from agents.validator import ValidatorAgent
 from agents.chaos_agent import ChaosAgent
 from agents.test_health import TestHealthAgent
+from agents.release_guardian import ReleaseGuardianAgent
+from agents.deployment_readiness import DeploymentReadinessAgent
+from notifications.slack_notify import send_deployment_notification, send_chaos_alert
 from database import get_connection
 
 
 class ShadowGateOrchestrator:
     """
-    Orchestrates all ShadowGate agents in the right order.
-    Week 3: Now includes Chaos + Test Health agents.
+    Orchestrates all ShadowGate agents.
+    Week 4: 6-stage pipeline with Release Guardian + Deployment Readiness.
     """
 
     def __init__(self):
@@ -27,15 +30,18 @@ class ShadowGateOrchestrator:
         self.validator = ValidatorAgent()
         self.chaos = ChaosAgent()
         self.health = TestHealthAgent()
+        self.guardian = ReleaseGuardianAgent()
+        self.deployment = DeploymentReadinessAgent()
 
     def run_pipeline(self, automation_name, requirements, automation_class, inject_chaos=False):
         """
-        Full ShadowGate pipeline:
-        1. Generate test scenarios
-        2. (Optional) Inject chaos
-        3. Run automation
-        4. Validate results
-        5. Scan test health
+        Full ShadowGate pipeline — 6 stages:
+        1. Environment Simulation
+        2. Chaos Injection (optional)
+        3. Run Automation
+        4. Validation
+        5. Test Health Scan
+        6. Release Guardian Analysis
         """
         print(f"\n{'='*55}")
         print(f"🌑 ShadowGate Pipeline: {automation_name.upper()}")
@@ -44,6 +50,15 @@ class ShadowGateOrchestrator:
         print(f"{'='*55}")
 
         start_time = datetime.now()
+        # Clear old test results for this automation
+        try:
+            conn = get_connection()
+            cursor = conn.cursor()
+            cursor.execute("DELETE FROM test_results WHERE automation_name = ?", (automation_name,))
+            conn.commit()
+            conn.close()
+        except Exception:
+            pass
         pipeline_report = {
             "automation": automation_name,
             "chaos_mode": inject_chaos,
@@ -51,8 +66,8 @@ class ShadowGateOrchestrator:
             "stages": {}
         }
 
-        # ── Stage 1: Generate Test Scenarios ──
-        print(f"\n📍 Stage 1/5: Environment Simulation")
+        # Stage 1: Environment Simulation
+        print(f"\n📍 Stage 1/6: Environment Simulation")
         scenarios = self.simulator.generate_test_scenarios(automation_name, requirements)
         if not scenarios:
             pipeline_report["status"] = "failed"
@@ -62,17 +77,18 @@ class ShadowGateOrchestrator:
             "scenarios_generated": len(scenarios.get("scenarios", []))
         }
 
-        # ── Stage 2: Inject Chaos (optional) ──
+        # Stage 2: Chaos Injection
         if inject_chaos:
-            print(f"\n📍 Stage 2/5: Chaos Injection")
+            print(f"\n📍 Stage 2/6: Chaos Injection")
             chaos_report = self.chaos.inject_chaos(automation_name)
             pipeline_report["stages"]["chaos_injection"] = chaos_report
+            send_chaos_alert(automation_name, chaos_report)
         else:
-            print(f"\n📍 Stage 2/5: Chaos Injection — SKIPPED (normal mode)")
+            print(f"\n📍 Stage 2/6: Chaos Injection — SKIPPED (normal mode)")
             pipeline_report["stages"]["chaos_injection"] = {"status": "skipped"}
 
-        # ── Stage 3: Run Automation ──
-        print(f"\n📍 Stage 3/5: Running Automation")
+        # Stage 3: Run Automation
+        print(f"\n📍 Stage 3/6: Running Automation")
         automation = automation_class()
         automation_result = automation.process()
         pipeline_report["stages"]["automation_run"] = {
@@ -80,49 +96,52 @@ class ShadowGateOrchestrator:
             "result": automation_result
         }
 
-        # ── Stage 4: Validate Results ──
-        print(f"\n📍 Stage 4/5: Validation")
+        # Stage 4: Validation
+        print(f"\n📍 Stage 4/6: Validation")
         validation_report = self.validator.validate(
             automation_name, scenarios, automation_result
         )
         pipeline_report["stages"]["validation"] = validation_report
 
-        # ── Stage 5: Test Health Scan ──
-        print(f"\n📍 Stage 5/5: Test Health Scan")
+        # Stage 5: Test Health Scan
+        print(f"\n📍 Stage 5/6: Test Health Scan")
         health_report = self.health.scan(automation_name)
         pipeline_report["stages"]["test_health"] = health_report
 
-        # ── Final Summary ──
-        duration = (datetime.now() - start_time).total_seconds()
-        pass_rate = validation_report.get("pass_rate", 0)
-        health_score = health_report.get("health_score", 0)
+        # Stage 6: Release Guardian
+        print(f"\n📍 Stage 6/6: Release Guardian Analysis")
+        guardian_report = self.guardian.analyse(automation_name, pipeline_report)
+        pipeline_report["stages"]["release_guardian"] = guardian_report
 
+        # Final metrics
+        duration = (datetime.now() - start_time).total_seconds()
         pipeline_report["status"] = "completed"
-        pipeline_report["pass_rate"] = pass_rate
-        pipeline_report["health_score"] = health_score
+        pipeline_report["pass_rate"] = validation_report.get("pass_rate", 0)
+        pipeline_report["health_score"] = health_report.get("health_score", 0)
+        pipeline_report["confidence_score"] = guardian_report.get("confidence_score", 0)
         pipeline_report["duration_seconds"] = round(duration, 2)
         pipeline_report["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
         self._print_pipeline_summary(pipeline_report)
-        self._log_to_audit(automation_name, pass_rate, health_score, duration)
+        self._log_to_audit(automation_name, pipeline_report)
 
         return pipeline_report
 
     def _print_pipeline_summary(self, report):
-        """Print final pipeline summary."""
         print(f"\n{'='*55}")
         print(f"🏁 Pipeline Complete: {report['automation'].upper()}")
         print(f"{'='*55}")
-        print(f"   ⏱️  Duration:      {report.get('duration_seconds', 0)}s")
-        print(f"   📈 Pass Rate:     {report.get('pass_rate', 0)}%")
-        print(f"   🏥 Health Score:  {report.get('health_score', 0)}/100")
+        print(f"   ⏱️  Duration:         {report.get('duration_seconds', 0)}s")
+        print(f"   📈 Pass Rate:        {report.get('pass_rate', 0)}%")
+        print(f"   🏥 Health Score:     {report.get('health_score', 0)}/100")
+        print(f"   🛡️  Confidence Score: {report.get('confidence_score', 0)}/100")
         chaos = "💥 YES" if report.get("chaos_mode") else "✅ NO"
-        print(f"   💥 Chaos Mode:    {chaos}")
-        status = "✅ HEALTHY" if report.get('pass_rate', 0) >= 80 else "⚠️  NEEDS ATTENTION"
-        print(f"   🎯 Status:        {status}")
+        print(f"   💥 Chaos Mode:       {chaos}")
+        status = "✅ HEALTHY" if report.get("confidence_score", 0) >= 85 else "⚠️  NEEDS ATTENTION"
+        print(f"   🎯 Status:           {status}")
         print(f"{'='*55}\n")
 
-    def _log_to_audit(self, automation_name, pass_rate, health_score, duration):
+    def _log_to_audit(self, automation_name, report):
         try:
             conn = get_connection()
             cursor = conn.cursor()
@@ -135,9 +154,9 @@ class ShadowGateOrchestrator:
                 self.name,
                 automation_name,
                 "run_full_pipeline",
-                f"Pass rate: {pass_rate}%, Health score: {health_score}/100",
-                int(duration * 1000),
-                "success" if pass_rate >= 80 else "warning"
+                f"Confidence: {report.get('confidence_score', 0)}/100, Pass: {report.get('pass_rate', 0)}%",
+                int(report.get("duration_seconds", 0) * 1000),
+                "success" if report.get("confidence_score", 0) >= 85 else "warning"
             ))
             conn.commit()
             conn.close()
@@ -146,7 +165,7 @@ class ShadowGateOrchestrator:
 
 
 def run_all_automations(chaos_mode=False):
-    """Run ShadowGate pipeline on all 3 automations."""
+    """Run ShadowGate pipeline on all 3 automations + deployment assessment."""
     from data_generator import seed_all
     from database import create_all_tables
     from mock_automations.loan_processing.automation import LoanProcessingAutomation, REQUIREMENTS as LOAN_REQ
@@ -158,6 +177,7 @@ def run_all_automations(chaos_mode=False):
 
     orchestrator = ShadowGateOrchestrator()
     all_reports = {}
+    all_guardian_reports = {}
 
     automations = [
         ("loan_processing", LOAN_REQ, LoanProcessingAutomation),
@@ -170,20 +190,36 @@ def run_all_automations(chaos_mode=False):
             name, requirements, cls, inject_chaos=chaos_mode
         )
         all_reports[name] = report
+        all_guardian_reports[name] = report.get("stages", {}).get("release_guardian", {})
+
+    # Final deployment readiness assessment
+    print(f"\n{'='*55}")
+    print(f"🌑 SHADOWGATE — FINAL DEPLOYMENT ASSESSMENT")
+    print(f"{'='*55}")
+
+    deployment_report = orchestrator.deployment.assess(all_guardian_reports)
+
+    # Send Slack notification
+    print(f"\n📲 Sending Slack notification...")
+    send_deployment_notification(deployment_report, all_guardian_reports)
 
     # Final summary
     print(f"\n{'='*55}")
     print(f"🌑 SHADOWGATE — ALL AUTOMATIONS SUMMARY")
     print(f"{'='*55}")
     for name, report in all_reports.items():
-        pass_rate = report.get("pass_rate", 0)
-        health = report.get("health_score", 0)
-        icon = "✅" if pass_rate >= 80 else "⚠️"
+        confidence = report.get("confidence_score", 0)
+        icon = "✅" if confidence >= 85 else "⚠️"
         print(f"   {icon} {name.replace('_', ' ').title()}")
-        print(f"      Pass Rate: {pass_rate}% | Health: {health}/100")
+        print(f"      Confidence: {confidence}/100 | Pass: {report.get('pass_rate', 0)}%")
+
+    signal = deployment_report.get("signal", "UNKNOWN")
+    overall = deployment_report.get("overall_confidence", 0)
+    signal_icon = "✅" if signal == "GREEN" else "❌"
+    print(f"\n   {signal_icon} DEPLOYMENT SIGNAL: {signal} ({overall}/100)")
     print(f"{'='*55}\n")
 
-    return all_reports
+    return all_reports, deployment_report
 
 
 if __name__ == "__main__":
