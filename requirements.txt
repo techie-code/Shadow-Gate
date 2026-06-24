@@ -1,10 +1,11 @@
 # ShadowGate - AI-powered Digital Twin Testing Platform
 # Python 3.14 compatible
 
-# Core AI
-anthropic>=0.25.0
+# Core AI — Groq (free tier)
+groq>=0.9.0
+langchain-groq>=0.1.0
 langchain>=0.2.0
-langchain-anthropic>=0.1.0
+langchain-core>=0.2.0
 langchain-community>=0.2.0
 
 # Data
@@ -15,7 +16,7 @@ faker>=24.0.0
 # Database
 sqlalchemy>=2.0.0
 
-# API & Notifications
+# API & Environment
 requests>=2.31.0
 python-dotenv>=1.0.0
 
