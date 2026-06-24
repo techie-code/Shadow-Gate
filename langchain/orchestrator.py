@@ -1,6 +1,6 @@
 """
-ShadowGate - LangChain Orchestration Layer v3
-Week 4: Now includes Release Guardian + Deployment Readiness + Slack.
+ShadowGate - LangChain Orchestration Layer v4
+Week 5: All 10 agents complete.
 """
 
 import sys
@@ -14,14 +14,17 @@ from agents.chaos_agent import ChaosAgent
 from agents.test_health import TestHealthAgent
 from agents.release_guardian import ReleaseGuardianAgent
 from agents.deployment_readiness import DeploymentReadinessAgent
+from agents.coverage_intelligence import CoverageIntelligenceAgent
+from agents.change_watcher import ChangeWatcherAgent
+from agents.ai_behavior_validator import AIBehaviorValidatorAgent
+from agents.governance_logger import GovernanceLogger
 from notifications.slack_notify import send_deployment_notification, send_chaos_alert
 from database import get_connection
 
 
 class ShadowGateOrchestrator:
     """
-    Orchestrates all ShadowGate agents.
-    Week 4: 6-stage pipeline with Release Guardian + Deployment Readiness.
+    Full ShadowGate orchestrator — all 10 agents.
     """
 
     def __init__(self):
@@ -32,17 +35,13 @@ class ShadowGateOrchestrator:
         self.health = TestHealthAgent()
         self.guardian = ReleaseGuardianAgent()
         self.deployment = DeploymentReadinessAgent()
+        self.coverage = CoverageIntelligenceAgent()
+        self.watcher = ChangeWatcherAgent()
+        self.ai_validator = AIBehaviorValidatorAgent()
+        self.governance = GovernanceLogger()
 
     def run_pipeline(self, automation_name, requirements, automation_class, inject_chaos=False):
-        """
-        Full ShadowGate pipeline — 6 stages:
-        1. Environment Simulation
-        2. Chaos Injection (optional)
-        3. Run Automation
-        4. Validation
-        5. Test Health Scan
-        6. Release Guardian Analysis
-        """
+        """Full 8-stage ShadowGate pipeline."""
         print(f"\n{'='*55}")
         print(f"🌑 ShadowGate Pipeline: {automation_name.upper()}")
         if inject_chaos:
@@ -50,7 +49,8 @@ class ShadowGateOrchestrator:
         print(f"{'='*55}")
 
         start_time = datetime.now()
-        # Clear old test results for this automation
+
+        # Clear old test results
         try:
             conn = get_connection()
             cursor = conn.cursor()
@@ -59,6 +59,7 @@ class ShadowGateOrchestrator:
             conn.close()
         except Exception:
             pass
+
         pipeline_report = {
             "automation": automation_name,
             "chaos_mode": inject_chaos,
@@ -66,8 +67,13 @@ class ShadowGateOrchestrator:
             "stages": {}
         }
 
-        # Stage 1: Environment Simulation
-        print(f"\n📍 Stage 1/6: Environment Simulation")
+        # Stage 1: Change Detection
+        print(f"\n📍 Stage 1/8: Change Detection")
+        change_report = self.watcher.check(automation_name)
+        pipeline_report["stages"]["change_detection"] = change_report
+
+        # Stage 2: Environment Simulation
+        print(f"\n📍 Stage 2/8: Environment Simulation")
         scenarios = self.simulator.generate_test_scenarios(automation_name, requirements)
         if not scenarios:
             pipeline_report["status"] = "failed"
@@ -77,18 +83,23 @@ class ShadowGateOrchestrator:
             "scenarios_generated": len(scenarios.get("scenarios", []))
         }
 
-        # Stage 2: Chaos Injection
+        # Stage 3: Coverage Intelligence
+        print(f"\n📍 Stage 3/8: Coverage Intelligence")
+        coverage_report = self.coverage.analyse(automation_name, requirements, scenarios)
+        pipeline_report["stages"]["coverage_intelligence"] = coverage_report
+
+        # Stage 4: Chaos Injection
         if inject_chaos:
-            print(f"\n📍 Stage 2/6: Chaos Injection")
+            print(f"\n📍 Stage 4/8: Chaos Injection")
             chaos_report = self.chaos.inject_chaos(automation_name)
             pipeline_report["stages"]["chaos_injection"] = chaos_report
             send_chaos_alert(automation_name, chaos_report)
         else:
-            print(f"\n📍 Stage 2/6: Chaos Injection — SKIPPED (normal mode)")
+            print(f"\n📍 Stage 4/8: Chaos Injection — SKIPPED (normal mode)")
             pipeline_report["stages"]["chaos_injection"] = {"status": "skipped"}
 
-        # Stage 3: Run Automation
-        print(f"\n📍 Stage 3/6: Running Automation")
+        # Stage 5: Run Automation
+        print(f"\n📍 Stage 5/8: Running Automation")
         automation = automation_class()
         automation_result = automation.process()
         pipeline_report["stages"]["automation_run"] = {
@@ -96,22 +107,25 @@ class ShadowGateOrchestrator:
             "result": automation_result
         }
 
-        # Stage 4: Validation
-        print(f"\n📍 Stage 4/6: Validation")
-        validation_report = self.validator.validate(
-            automation_name, scenarios, automation_result
-        )
+        # Stage 6: Validation
+        print(f"\n📍 Stage 6/8: Validation")
+        validation_report = self.validator.validate(automation_name, scenarios, automation_result)
         pipeline_report["stages"]["validation"] = validation_report
 
-        # Stage 5: Test Health Scan
-        print(f"\n📍 Stage 5/6: Test Health Scan")
+        # Stage 7: Test Health Scan
+        print(f"\n📍 Stage 7/8: Test Health Scan")
         health_report = self.health.scan(automation_name)
         pipeline_report["stages"]["test_health"] = health_report
 
-        # Stage 6: Release Guardian
-        print(f"\n📍 Stage 6/6: Release Guardian Analysis")
+        # Stage 8: Release Guardian
+        print(f"\n📍 Stage 8/8: Release Guardian Analysis")
         guardian_report = self.guardian.analyse(automation_name, pipeline_report)
         pipeline_report["stages"]["release_guardian"] = guardian_report
+
+        # AI Behavior Validation
+        print(f"\n🤖 AI Behavior Validation")
+        ai_behavior_report = self.ai_validator.validate(automation_name, pipeline_report)
+        pipeline_report["stages"]["ai_behavior"] = ai_behavior_report
 
         # Final metrics
         duration = (datetime.now() - start_time).total_seconds()
@@ -119,6 +133,8 @@ class ShadowGateOrchestrator:
         pipeline_report["pass_rate"] = validation_report.get("pass_rate", 0)
         pipeline_report["health_score"] = health_report.get("health_score", 0)
         pipeline_report["confidence_score"] = guardian_report.get("confidence_score", 0)
+        pipeline_report["coverage_score"] = coverage_report.get("coverage_score", 0)
+        pipeline_report["ai_behavior_score"] = ai_behavior_report.get("behavior_score", 0)
         pipeline_report["duration_seconds"] = round(duration, 2)
         pipeline_report["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -131,14 +147,16 @@ class ShadowGateOrchestrator:
         print(f"\n{'='*55}")
         print(f"🏁 Pipeline Complete: {report['automation'].upper()}")
         print(f"{'='*55}")
-        print(f"   ⏱️  Duration:         {report.get('duration_seconds', 0)}s")
-        print(f"   📈 Pass Rate:        {report.get('pass_rate', 0)}%")
-        print(f"   🏥 Health Score:     {report.get('health_score', 0)}/100")
-        print(f"   🛡️  Confidence Score: {report.get('confidence_score', 0)}/100")
+        print(f"   ⏱️  Duration:           {report.get('duration_seconds', 0)}s")
+        print(f"   📈 Pass Rate:          {report.get('pass_rate', 0)}%")
+        print(f"   🏥 Health Score:       {report.get('health_score', 0)}/100")
+        print(f"   🛡️  Confidence Score:   {report.get('confidence_score', 0)}/100")
+        print(f"   🔭 Coverage Score:     {report.get('coverage_score', 0)}/100")
+        print(f"   🤖 AI Behavior Score:  {report.get('ai_behavior_score', 0)}/100")
         chaos = "💥 YES" if report.get("chaos_mode") else "✅ NO"
-        print(f"   💥 Chaos Mode:       {chaos}")
+        print(f"   💥 Chaos Mode:         {chaos}")
         status = "✅ HEALTHY" if report.get("confidence_score", 0) >= 85 else "⚠️  NEEDS ATTENTION"
-        print(f"   🎯 Status:           {status}")
+        print(f"   🎯 Status:             {status}")
         print(f"{'='*55}\n")
 
     def _log_to_audit(self, automation_name, report):
@@ -165,7 +183,7 @@ class ShadowGateOrchestrator:
 
 
 def run_all_automations(chaos_mode=False):
-    """Run ShadowGate pipeline on all 3 automations + deployment assessment."""
+    """Run full ShadowGate pipeline on all 3 automations."""
     from data_generator import seed_all
     from database import create_all_tables
     from mock_automations.loan_processing.automation import LoanProcessingAutomation, REQUIREMENTS as LOAN_REQ
@@ -192,16 +210,21 @@ def run_all_automations(chaos_mode=False):
         all_reports[name] = report
         all_guardian_reports[name] = report.get("stages", {}).get("release_guardian", {})
 
-    # Final deployment readiness assessment
+    # Final deployment assessment
     print(f"\n{'='*55}")
     print(f"🌑 SHADOWGATE — FINAL DEPLOYMENT ASSESSMENT")
     print(f"{'='*55}")
-
     deployment_report = orchestrator.deployment.assess(all_guardian_reports)
 
-    # Send Slack notification
+    # Slack notification
     print(f"\n📲 Sending Slack notification...")
     send_deployment_notification(deployment_report, all_guardian_reports)
+
+    # Governance report
+    print(f"\n{'='*55}")
+    print(f"🌑 SHADOWGATE — GOVERNANCE REPORT")
+    print(f"{'='*55}")
+    orchestrator.governance.generate_report()
 
     # Final summary
     print(f"\n{'='*55}")
@@ -211,7 +234,7 @@ def run_all_automations(chaos_mode=False):
         confidence = report.get("confidence_score", 0)
         icon = "✅" if confidence >= 85 else "⚠️"
         print(f"   {icon} {name.replace('_', ' ').title()}")
-        print(f"      Confidence: {confidence}/100 | Pass: {report.get('pass_rate', 0)}%")
+        print(f"      Confidence: {confidence}/100 | Pass: {report.get('pass_rate', 0)}% | Coverage: {report.get('coverage_score', 0)}/100")
 
     signal = deployment_report.get("signal", "UNKNOWN")
     overall = deployment_report.get("overall_confidence", 0)
