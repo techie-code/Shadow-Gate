@@ -1,0 +1,326 @@
+{
+  "generated_at": "2026-06-25 07:28:07",
+  "total_actions": 100,
+  "session_summary": {
+    "automations_tested": [
+      "loan_processing",
+      "fraud_detection",
+      "all_automations",
+      "account_onboarding"
+    ],
+    "agents_active": [
+      "ShadowGateOrchestrator",
+      "ReleaseGuardian",
+      "CoverageIntelligence",
+      "TestHealthAgent",
+      "DeploymentReadiness",
+      "ValidatorAgent",
+      "AIBehaviorValidator"
+    ],
+    "total_actions": 100,
+    "successes": 99,
+    "warnings": 1,
+    "failures": 0,
+    "success_rate": 99.0
+  },
+  "agent_activity": {
+    "DeploymentReadiness": {
+      "actions": 6,
+      "successes": 5,
+      "warnings": 1
+    },
+    "ReleaseGuardian": {
+      "actions": 16,
+      "successes": 16,
+      "warnings": 0
+    },
+    "AIBehaviorValidator": {
+      "actions": 16,
+      "successes": 16,
+      "warnings": 0
+    },
+    "ShadowGateOrchestrator": {
+      "actions": 16,
+      "successes": 16,
+      "warnings": 0
+    },
+    "TestHealthAgent": {
+      "actions": 15,
+      "successes": 15,
+      "warnings": 0
+    },
+    "ValidatorAgent": {
+      "actions": 16,
+      "successes": 16,
+      "warnings": 0
+    },
+    "CoverageIntelligence": {
+      "actions": 15,
+      "successes": 15,
+      "warnings": 0
+    }
+  },
+  "compliance_score": 99.0,
+  "audit_entries": [
+    {
+      "log_id": 98,
+      "timestamp": "2026-06-24 21:35:57",
+      "agent_name": "TestHealthAgent",
+      "automation_name": "account_onboarding",
+      "action": "scan_test_health",
+      "input_summary": null,
+      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 93,
+      "timestamp": "2026-06-24 21:35:56",
+      "agent_name": "ReleaseGuardian",
+      "automation_name": "fraud_detection",
+      "action": "analyse_release_readiness",
+      "input_summary": null,
+      "output_summary": "Confidence Score: 95.0/100. Risk: low",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 94,
+      "timestamp": "2026-06-24 21:35:56",
+      "agent_name": "AIBehaviorValidator",
+      "automation_name": "fraud_detection",
+      "action": "validate_ai_behavior",
+      "input_summary": null,
+      "output_summary": "Behavior score: 100.0/100. Passed: 3/3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 95,
+      "timestamp": "2026-06-24 21:35:56",
+      "agent_name": "ShadowGateOrchestrator",
+      "automation_name": "fraud_detection",
+      "action": "run_full_pipeline",
+      "input_summary": null,
+      "output_summary": "Confidence: 95.0/100, Pass: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": 2320,
+      "status": "success"
+    },
+    {
+      "log_id": 96,
+      "timestamp": "2026-06-24 21:35:56",
+      "agent_name": "CoverageIntelligence",
+      "automation_name": "account_onboarding",
+      "action": "analyse_coverage",
+      "input_summary": null,
+      "output_summary": "Coverage score: 100.0/100. Gaps found: 3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 97,
+      "timestamp": "2026-06-24 21:35:56",
+      "agent_name": "ValidatorAgent",
+      "automation_name": "account_onboarding",
+      "action": "validate_scenarios",
+      "input_summary": null,
+      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 92,
+      "timestamp": "2026-06-24 21:35:55",
+      "agent_name": "TestHealthAgent",
+      "automation_name": "fraud_detection",
+      "action": "scan_test_health",
+      "input_summary": null,
+      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 90,
+      "timestamp": "2026-06-24 21:35:54",
+      "agent_name": "CoverageIntelligence",
+      "automation_name": "fraud_detection",
+      "action": "analyse_coverage",
+      "input_summary": null,
+      "output_summary": "Coverage score: 100.0/100. Gaps found: 3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 91,
+      "timestamp": "2026-06-24 21:35:54",
+      "agent_name": "ValidatorAgent",
+      "automation_name": "fraud_detection",
+      "action": "validate_scenarios",
+      "input_summary": null,
+      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 87,
+      "timestamp": "2026-06-24 21:35:53",
+      "agent_name": "ReleaseGuardian",
+      "automation_name": "loan_processing",
+      "action": "analyse_release_readiness",
+      "input_summary": null,
+      "output_summary": "Confidence Score: 95.0/100. Risk: low",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 88,
+      "timestamp": "2026-06-24 21:35:53",
+      "agent_name": "AIBehaviorValidator",
+      "automation_name": "loan_processing",
+      "action": "validate_ai_behavior",
+      "input_summary": null,
+      "output_summary": "Behavior score: 100.0/100. Passed: 3/3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 89,
+      "timestamp": "2026-06-24 21:35:53",
+      "agent_name": "ShadowGateOrchestrator",
+      "automation_name": "loan_processing",
+      "action": "run_full_pipeline",
+      "input_summary": null,
+      "output_summary": "Confidence: 95.0/100, Pass: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": 3780,
+      "status": "success"
+    },
+    {
+      "log_id": 86,
+      "timestamp": "2026-06-24 21:35:52",
+      "agent_name": "TestHealthAgent",
+      "automation_name": "loan_processing",
+      "action": "scan_test_health",
+      "input_summary": null,
+      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 84,
+      "timestamp": "2026-06-24 21:35:51",
+      "agent_name": "CoverageIntelligence",
+      "automation_name": "loan_processing",
+      "action": "analyse_coverage",
+      "input_summary": null,
+      "output_summary": "Coverage score: 100.0/100. Gaps found: 3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 85,
+      "timestamp": "2026-06-24 21:35:51",
+      "agent_name": "ValidatorAgent",
+      "automation_name": "loan_processing",
+      "action": "validate_scenarios",
+      "input_summary": null,
+      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 80,
+      "timestamp": "2026-06-24 21:26:18",
+      "agent_name": "ReleaseGuardian",
+      "automation_name": "account_onboarding",
+      "action": "analyse_release_readiness",
+      "input_summary": null,
+      "output_summary": "Confidence Score: 95.0/100. Risk: low",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 81,
+      "timestamp": "2026-06-24 21:26:18",
+      "agent_name": "AIBehaviorValidator",
+      "automation_name": "account_onboarding",
+      "action": "validate_ai_behavior",
+      "input_summary": null,
+      "output_summary": "Behavior score: 100.0/100. Passed: 3/3",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    },
+    {
+      "log_id": 82,
+      "timestamp": "2026-06-24 21:26:18",
+      "agent_name": "ShadowGateOrchestrator",
+      "automation_name": "account_onboarding",
+      "action": "run_full_pipeline",
+      "input_summary": null,
+      "output_summary": "Confidence: 95.0/100, Pass: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": 11490,
+      "status": "success"
+    },
+    {
+      "log_id": 83,
+      "timestamp": "2026-06-24 21:26:18",
+      "agent_name": "DeploymentReadiness",
+      "automation_name": "all_automations",
+      "action": "assess_deployment_readiness",
+      "input_summary": null,
+      "output_summary": "Signal: RED. Score: 78.0/100. Blockers: 1",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "warning"
+    },
+    {
+      "log_id": 78,
+      "timestamp": "2026-06-24 21:26:16",
+      "agent_name": "ValidatorAgent",
+      "automation_name": "account_onboarding",
+      "action": "validate_scenarios",
+      "input_summary": null,
+      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%",
+      "decision": null,
+      "severity": null,
+      "duration_ms": null,
+      "status": "success"
+    }
+  ]
+}

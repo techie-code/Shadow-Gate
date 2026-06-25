@@ -1,0 +1,26 @@
+
+--- Authentication Error Log 2026-06-25 08:07:11 ---
+[
+  {
+    "timestamp": "2026-06-25T07:07:10.728Z",
+    "message": "Authentication started",
+    "params": {
+      "code": "a54267ea-87d4-45ff-82cf-73af2d7ee00d.B510E8B4C483EED954489C5EBE4A35D6ABAEE423704F22B94AFE2F8FA95386C7",
+      "state": "RJUor-PyBghFiFav31kMh45T6pr8KISozIbYW53hYq0",
+      "iss": "https://cloud.uipath.com/identity_"
+    }
+  }
+]
+
+--- Authentication Error Log 2026-06-25 08:51:08 ---
+[
+  {
+    "timestamp": "2026-06-25T07:51:08.002Z",
+    "message": "Authentication started",
+    "params": {
+      "code": "c563e9bc-8887-4648-8883-a893f288bfcb.879E2F62C62AEA5270362A085177CC73661A392B88030B1F5565EBC20FD1B408",
+      "state": "ghr4Wa1g6Nb75gu_2FleNF408xC12ECItCpbZ4GU_pk",
+      "iss": "https://staging.uipath.com/identity_"
+    }
+  }
+]

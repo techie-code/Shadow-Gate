@@ -1,0 +1,12 @@
+[project]
+name = "shadowgate"
+version = "1.0.0"
+description = "ShadowGate - AI-powered Digital Twin Testing Platform"
+requires-python = ">=3.12"
+authors = [{ name = "Aishwarya Lakshmi S" }]
+
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+

@@ -226,6 +226,17 @@ def run_all_automations(chaos_mode=False):
     print(f"{'='*55}")
     orchestrator.governance.generate_report()
 
+    # Export dashboard data
+    print(f"\n{'='*55}")
+    print(f"🌑 SHADOWGATE — DASHBOARD")
+    print(f"{'='*55}")
+    try:
+        from dashboard.export_data import export_dashboard_data
+        export_dashboard_data(all_reports)
+        print(f"   🌐 Open dashboard/index.html in your browser!")
+    except Exception as e:
+        print(f"   ⚠️ Dashboard export: {e}")
+
     # Final summary
     print(f"\n{'='*55}")
     print(f"🌑 SHADOWGATE — ALL AUTOMATIONS SUMMARY")
@@ -241,6 +252,16 @@ def run_all_automations(chaos_mode=False):
     signal_icon = "✅" if signal == "GREEN" else "❌"
     print(f"\n   {signal_icon} DEPLOYMENT SIGNAL: {signal} ({overall}/100)")
     print(f"{'='*55}\n")
+
+    # UiPath Integration
+    print(f"\n{'='*55}")
+    print(f"🌑 SHADOWGATE — UIPATH INTEGRATION")
+    print(f"{'='*55}")
+    try:
+        from uipath.integration import run_uipath_integration
+        run_uipath_integration(all_reports)
+    except Exception as e:
+        print(f"   ⚠️ UiPath integration: {e}")
 
     return all_reports, deployment_report
 

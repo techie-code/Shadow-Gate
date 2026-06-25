@@ -1,0 +1,18 @@
+{
+  "$schema": "https://cloud.uipath.com/draft/2024-12/uipath",
+  "runtimeOptions": {
+    "isConversational": false
+  },
+  "packOptions": {
+    "fileExtensionsIncluded": [],
+    "filesIncluded": [],
+    "filesExcluded": [],
+    "directoriesExcluded": [],
+    "includeUvLock": true
+  },
+  "functions": {},
+  "agents": {
+    "shadowgate": "langchain/orchestrator.py:run_all_automations"
+  },
+  "id": "04a9125e-2c18-4238-988a-814d51e8100b"
+}

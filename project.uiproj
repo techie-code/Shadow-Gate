@@ -1,0 +1,6 @@
+{
+  "ProjectType": "Agent",
+  "Name": "shadowgate",
+  "Description": "ShadowGate - AI-powered Digital Twin Testing Platform",
+  "MainFile": null
+}

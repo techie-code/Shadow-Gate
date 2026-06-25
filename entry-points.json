@@ -1,0 +1,30 @@
+{
+    "$schema": "https://cloud.uipath.com/draft/2024-12/entry-point",
+    "$id": "entry-points.json",
+    "entryPoints": [
+        {
+            "filePath": "shadowgate",
+            "uniqueId": "9c83259f-717a-49fd-8493-c9cd03c7b888",
+            "type": "agent",
+            "input": {
+                "type": "object"
+            },
+            "output": {
+                "type": "object"
+            },
+            "graph": {
+                "nodes": [
+                    {
+                        "id": "orchestrator.py:266",
+                        "name": "run_all_automations",
+                        "type": "function",
+                        "metadata": {
+                            "file": "orchestrator.py"
+                        }
+                    }
+                ],
+                "edges": []
+            }
+        }
+    ]
+}
