@@ -24,3 +24,16 @@
     }
   }
 ]
+
+--- Authentication Error Log 2026-06-25 12:17:55 ---
+[
+  {
+    "timestamp": "2026-06-25T11:17:55.471Z",
+    "message": "Authentication started",
+    "params": {
+      "code": "c563e9bc-8887-4648-8883-a893f288bfcb.FBE4A69FAA8689048835206B3EE838A4F90AAE4689AA072D4D6268A33E154D91",
+      "state": "Ac6u9EW9U5Rrl9v843YRagmnkg0kzhMZZKLCK_pEyRs",
+      "iss": "https://staging.uipath.com/identity_"
+    }
+  }
+]

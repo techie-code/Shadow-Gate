@@ -4,7 +4,7 @@
     "entryPoints": [
         {
             "filePath": "shadowgate",
-            "uniqueId": "9c83259f-717a-49fd-8493-c9cd03c7b888",
+            "uniqueId": "0a8b58cf-0c18-413e-887d-2de0d1e63ef4",
             "type": "agent",
             "input": {
                 "type": "object"
