@@ -19,13 +19,50 @@ import json
 import random
 
 
-# Mock doctor database
+# Mock doctor database with experience levels
 DOCTORS = [
-    {"id": "D001", "name": "Dr. Rajan Kumar", "specialty": "Cardiology", "available": True, "current_patients": 1},
-    {"id": "D002", "name": "Dr. Priya Mehta", "specialty": "General Medicine", "available": True, "current_patients": 2},
-    {"id": "D003", "name": "Dr. James Wilson", "specialty": "Emergency", "available": True, "current_patients": 0},
-    {"id": "D004", "name": "Dr. Sarah Chen", "specialty": "Internal Medicine", "available": False, "current_patients": 3},
-    {"id": "D005", "name": "Dr. Michael Brown", "specialty": "Neurology", "available": True, "current_patients": 1},
+    {
+        "id": "D001", "name": "Dr. Rajan Kumar",
+        "specialty": "Cardiology", "available": True,
+        "current_patients": 1, "experience_years": 15,
+        "level": "Senior", "handles_priority": ["P1", "P2", "P3", "P4"]
+    },
+    {
+        "id": "D002", "name": "Dr. Priya Mehta",
+        "specialty": "General Medicine", "available": True,
+        "current_patients": 2, "experience_years": 10,
+        "level": "Senior", "handles_priority": ["P2", "P3", "P4"]
+    },
+    {
+        "id": "D003", "name": "Dr. James Wilson",
+        "specialty": "Emergency", "available": True,
+        "current_patients": 0, "experience_years": 20,
+        "level": "Senior", "handles_priority": ["P1", "P2", "P3", "P4"]
+    },
+    {
+        "id": "D004", "name": "Dr. Sarah Chen",
+        "specialty": "Internal Medicine", "available": False,
+        "current_patients": 3, "experience_years": 8,
+        "level": "Mid", "handles_priority": ["P2", "P3", "P4"]
+    },
+    {
+        "id": "D005", "name": "Dr. Michael Brown",
+        "specialty": "Neurology", "available": True,
+        "current_patients": 1, "experience_years": 12,
+        "level": "Senior", "handles_priority": ["P1", "P2", "P3", "P4"]
+    },
+    {
+        "id": "D006", "name": "Dr. Aisha Patel",
+        "specialty": "General Medicine", "available": True,
+        "current_patients": 0, "experience_years": 4,
+        "level": "Junior", "handles_priority": ["P3", "P4"]
+    },
+    {
+        "id": "D007", "name": "Dr. Tom Richards",
+        "specialty": "Orthopedics", "available": True,
+        "current_patients": 1, "experience_years": 6,
+        "level": "Mid", "handles_priority": ["P3", "P4"]
+    },
 ]
 
 # Priority waiting time limits (minutes)
@@ -126,6 +163,7 @@ class GUARDIAN:
         print(f"\n GUARDIAN Assignment:")
         print(f"   Patient: {patient.get('name')} | Priority: {priority}")
         print(f"   Assigned to: {doctor['name']} ({doctor['specialty']})")
+        print(f"   Experience: {doctor.get('experience_years', 0)} years | Level: {doctor.get('level', 'Unknown')}")
         print(f"   Estimated wait: {waiting_time} minutes")
 
         if assignment["wait_exceeded"]:
@@ -145,27 +183,68 @@ class GUARDIAN:
         return "General Medicine"
 
     def find_best_doctor(self, specialty, priority):
-        """Find best available doctor for specialty and priority."""
-        # For P1 always use emergency if available
+        """
+        Find best available doctor based on:
+        1. Priority level (P1/P2 need senior/experienced doctors)
+        2. Specialty match
+        3. Current workload (fewer patients = better)
+        4. Experience level
+        """
+        # P1 - Must have senior emergency or specialist doctor
         if priority == "P1":
-            emergency_docs = [d for d in DOCTORS
-                              if d["specialty"] == "Emergency" and d["available"]]
-            if emergency_docs:
-                return min(emergency_docs, key=lambda d: d["current_patients"])
+            senior_emergency = [d for d in DOCTORS
+                if d["available"]
+                and priority in d.get("handles_priority", [])
+                and d["specialty"] == "Emergency"
+                and d["level"] == "Senior"]
+            if senior_emergency:
+                return min(senior_emergency, key=lambda d: d["current_patients"])
 
-        # Find by specialty
+            # Any senior doctor who handles P1
+            senior_docs = [d for d in DOCTORS
+                if d["available"]
+                and priority in d.get("handles_priority", [])
+                and d["level"] == "Senior"]
+            if senior_docs:
+                return min(senior_docs, key=lambda d: d["current_patients"])
+
+        # P2 - Senior or mid-level doctor by specialty
+        if priority == "P2":
+            specialty_docs = [d for d in DOCTORS
+                if d["available"]
+                and priority in d.get("handles_priority", [])
+                and d["specialty"] == specialty
+                and d["level"] in ["Senior", "Mid"]]
+            if specialty_docs:
+                return min(specialty_docs, key=lambda d: d["current_patients"])
+
+        # P3/P4 - Any available doctor including juniors, prefer specialty match
+        # Junior doctors handle lower priority to build experience
         specialty_docs = [d for d in DOCTORS
-                          if d["specialty"] == specialty and d["available"]]
+            if d["available"]
+            and priority in d.get("handles_priority", [])
+            and d["specialty"] == specialty]
         if specialty_docs:
+            # For P3/P4 prefer less experienced (learning opportunity)
+            # but still available and not overloaded
             return min(specialty_docs, key=lambda d: d["current_patients"])
 
-        # Fall back to general medicine
+        # General medicine fallback
         general_docs = [d for d in DOCTORS
-                        if d["specialty"] == "General Medicine" and d["available"]]
+            if d["available"]
+            and priority in d.get("handles_priority", [])
+            and d["specialty"] == "General Medicine"]
         if general_docs:
             return min(general_docs, key=lambda d: d["current_patients"])
 
-        # Any available doctor
+        # Any available doctor who handles this priority
+        available_docs = [d for d in DOCTORS
+            if d["available"]
+            and priority in d.get("handles_priority", [])]
+        if available_docs:
+            return min(available_docs, key=lambda d: d["current_patients"])
+
+        # Last resort - any available doctor
         available_docs = [d for d in DOCTORS if d["available"]]
         if available_docs:
             return min(available_docs, key=lambda d: d["current_patients"])

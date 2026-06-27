@@ -232,6 +232,29 @@ SAMPLE_PATIENTS = [
         "emergency_contacts": ["Tom Wilson - 07700900789"],
         "insurance_status": "active"
     }
+,
+    {
+        "patient_id": "P004",
+        "name": "James Murphy",
+        "age": 35,
+        "gender": "Male",
+        "symptoms": "Minor ankle sprain, mild pain while walking",
+        "vital_signs": {
+            "heart_rate": 72,
+            "blood_pressure": "118/76",
+            "temperature_f": 98.4,
+            "oxygen_saturation": 99
+        },
+        "medical_history": [],
+        "current_medications": [],
+        "allergies": [],
+        "weight_kg": 80,
+        "symptom_duration": "2 hours",
+        "pain_scale": 3,
+        "lives_alone": False,
+        "emergency_contacts": ["Mary Murphy - 07700900321"],
+        "insurance_status": "active"
+    }
 ]
 
 

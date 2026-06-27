@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-27 14:11:47",
+  "updated_at": "2026-06-27 18:50:34",
   "deployment_signal": "GREEN",
   "overall_confidence": 95.0,
   "automations": {
@@ -33,14 +33,14 @@
     }
   },
   "hospital_summary": {
-    "total_patients": 3,
-    "p1_critical": 2,
-    "unknown_risks_discovered": 9,
+    "total_patients": 4,
+    "p1_critical": 1,
+    "unknown_risks_discovered": 0,
     "treatments_blocked": 0,
-    "approved_for_discharge": 3,
-    "follow_ups_scheduled": 3,
+    "approved_for_discharge": 4,
+    "follow_ups_scheduled": 4,
     "conduct_alerts": 0,
-    "duration_seconds": 9.92,
-    "completed_at": "2026-06-27 14:11:20"
+    "duration_seconds": 7.54,
+    "completed_at": "2026-06-27 18:50:24"
   }
 }

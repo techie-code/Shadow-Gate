@@ -11,7 +11,10 @@ We test what you know. We discover what you don't.
 import sys
 import os
 from datetime import datetime
-
+from database import get_connection
+conn = get_connection()
+conn.execute("DELETE FROM test_results")
+conn.commit()
 
 def main():
     print(f"\n{'='*55}")

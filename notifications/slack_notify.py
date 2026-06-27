@@ -17,7 +17,7 @@ load_dotenv()
 
 def send_deployment_notification(deployment_report, guardian_reports):
     """Send deployment readiness notification to Slack."""
-    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")  # IT/Deployment channel
 
     if not webhook_url or webhook_url == "your_slack_webhook_url_here":
         print(f"   📲 Slack: No webhook configured — skipping notification")
@@ -103,7 +103,7 @@ def send_deployment_notification(deployment_report, guardian_reports):
 
 def send_chaos_alert(automation_name, chaos_report):
     """Send chaos injection alert to Slack."""
-    webhook_url = os.getenv("SLACK_WEBHOOK_URL")
+    webhook_url = os.getenv("SLACK_WEBHOOK_URL")  # IT/Deployment channel
 
     if not webhook_url or webhook_url == "your_slack_webhook_url_here":
         return False

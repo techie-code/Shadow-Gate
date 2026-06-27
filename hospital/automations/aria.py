@@ -257,8 +257,16 @@ If no unknown risks found, return: {{"unknown_risks": []}}"""
         """Assign patient priority based on scenarios and unknown risks."""
         vitals = patient.get("vital_signs", {})
         age = int(patient.get("age", 0))
+        symptoms = patient.get("symptoms", "").lower()
+        pain_scale = patient.get("pain_scale", 5)
+        history = patient.get("medical_history", [])
 
-        # Check vital signs severity
+        try:
+            pain_scale = int(pain_scale)
+        except (TypeError, ValueError):
+            pain_scale = 5
+
+        # Check vital signs
         heart_rate = vitals.get("heart_rate", 80)
         o2_sat = vitals.get("oxygen_saturation", 98)
         temp = vitals.get("temperature_f", 98.6)
@@ -272,36 +280,47 @@ If no unknown risks found, return: {{"unknown_risks": []}}"""
             o2_sat = 98
             temp = 98.6
 
-        # Critical vitals = P1
+        # P1 - Life threatening vitals
         if (heart_rate > 130 or heart_rate < 40 or
                 o2_sat < 90 or temp > 104 or temp < 95):
             return "P1"
 
-        # High risk unknown risks = P1 or P2
+        # P1 - Life threatening symptoms
+        p1_keywords = ["chest pain", "heart attack", "stroke", "unconscious",
+                       "not breathing", "severe bleeding", "cardiac"]
+        if any(k in symptoms for k in p1_keywords):
+            return "P1"
+
+        # P1 - High risk unknown risks
         high_risks = [r for r in unknown_risks if r.get("severity") == "HIGH"]
         if high_risks:
             return "P1"
 
-        # Worst case is critical = P1
+        # P1 - Elderly with serious symptoms
         worst = scenarios.get("worst_case", {})
         if worst.get("risk_level") == "HIGH" and age > 70:
             return "P1"
 
-        # Moderate case critical = P2
-        moderate = scenarios.get("moderate_case", {})
-        if moderate.get("risk_level") == "MEDIUM":
+        # P2 - Urgent but not life threatening
+        p2_keywords = ["fever", "infection", "fracture", "breathing difficulty",
+                       "severe pain", "vomiting", "rash", "allergic"]
+        if any(k in symptoms for k in p2_keywords):
             return "P2"
 
-        # Best case only = P3 or P4
-        pain_scale = patient.get("pain_scale", 5)
-        try:
-            pain_scale = int(pain_scale)
-        except (TypeError, ValueError):
-            pain_scale = 5
+        # P2 - Medium risks or complex history
+        medium_risks = [r for r in unknown_risks if r.get("severity") == "MEDIUM"]
+        if medium_risks and len(history) > 0:
+            return "P2"
 
-        if pain_scale >= 7:
+        # P3 - Moderate pain or minor illness
+        if pain_scale >= 6:
             return "P3"
 
+        p3_keywords = ["moderate", "persistent", "headache", "back pain", "cough"]
+        if any(k in symptoms for k in p3_keywords):
+            return "P3"
+
+        # P4 - Minor, non-urgent
         return "P4"
 
     def fallback_scenarios(self, patient):

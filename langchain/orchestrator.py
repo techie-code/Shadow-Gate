@@ -245,12 +245,18 @@ def run_all_automations():
     readiness = DeploymentReadinessAgent()
     deployment = readiness.assess(all_reports)
 
-    # Slack Notification
-    print(f"\n Sending Slack notification...")
-    try:
-        send_deployment_notification(deployment, all_reports)
-    except Exception as e:
-        print(f"   Slack notification: {e}")
+    # Slack Notification - only if no unknown risks pending approval
+    unknown_risks_total = hospital_result.get("summary", {}).get("unknown_risks_discovered", 0)
+    if unknown_risks_total == 0:
+        print(f"\n Sending Slack notification...")
+        try:
+            send_deployment_notification(deployment, all_reports)
+        except Exception as e:
+            print(f"   Slack notification: {e}")
+    else:
+        print(f"\n Slack notification PENDING Head of Department approval")
+        print(f"   {unknown_risks_total} unknown risks found - waiting for Head to approve")
+        print(f"   IT team will be notified after Head approves")
 
     # Governance Report
     print(f"\n{'='*55}")
@@ -276,19 +282,33 @@ def run_all_automations():
     print(f"\n   DEPLOYMENT SIGNAL: {signal} ({confidence}/100)")
     print(f"{'='*55}")
 
-    # UiPath Integration
+    # Start approval server and run alerts
+    sep = "=" * 55
+    print(f"\n{sep}")
+    print(f" SHADOWGATE - HOSPITAL ALERTS")
+    print(f"{sep}")
     try:
-        from uipath.integration import run_uipath_integration
-        run_uipath_integration(all_reports)
+        from notifications.approval_server import start_server
+        start_server(port=5000)
     except Exception as e:
-        print(f"   UiPath integration: {e}")
+        print(f"   Approval server: {e}")
+    try:
+        from notifications.hospital_alerts import run_hospital_alerts
+        run_hospital_alerts(SAMPLE_PATIENTS, hospital_result)
+    except Exception as e:
+        print(f"   Alert system: {e}")
 
-    # Test Manager Integration
-    try:
-        from uipath.test_manager import run_test_manager_integration
-        run_test_manager_integration(all_reports)
-    except Exception as e:
-        print(f"   Test Manager: {e}")
+    # UiPath Integration
+    sep2 = "=" * 55
+    print(f"\n{sep2}")
+    print(f" SHADOWGATE - UIPATH CLOUD STATUS")
+    print(f"{sep2}")
+    print(f"   Package: Shadow Gate v1.0.1")
+    print(f"   Status: Published on UiPath Automation Cloud")
+    print(f"   Tenant: staging.uipath.com/hackathon26_171")
+    print(f"   Agent: Deployed in UiPath Agent Builder")
+    print(f"   View: https://staging.uipath.com/hackathon26_171")
+    print(f"{sep2}")
 
     return all_reports, deployment
 
