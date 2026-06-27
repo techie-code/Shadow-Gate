@@ -1,6 +1,7 @@
 """
-ShadowGate - Database Setup
-Creates SQLite database and all tables for the 3 mock automations.
+ShadowGate - Hospital Database
+SQLite database for hospital patient management system.
+Stores patients, scenarios, safety validations, assignments and discharge records.
 """
 
 import sqlite3
@@ -11,110 +12,137 @@ DB_PATH = os.getenv("SHADOWGATE_DB_PATH", "shadowgate.db")
 
 
 def get_connection():
-    """Get a database connection with timeout to prevent locking."""
+    """Get database connection with WAL mode to prevent locking."""
     conn = sqlite3.connect(DB_PATH, timeout=30)
     conn.row_factory = sqlite3.Row
-    conn.execute("PRAGMA journal_mode=WAL")  # Prevents database locked errors
+    conn.execute("PRAGMA journal_mode=WAL")
     conn.execute("PRAGMA busy_timeout=30000")
     return conn
 
 
 def create_all_tables():
-    """Create all tables for all 3 automations."""
+    """Create all hospital database tables."""
     conn = get_connection()
     cursor = conn.cursor()
 
-    # AUTOMATION 1: LOAN PROCESSING
+    # PATIENTS
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS loan_applications (
-            application_id      INTEGER PRIMARY KEY,
-            customer_id         INTEGER,
-            full_name           TEXT,
-            email               TEXT,
-            loan_amount         REAL,
-            loan_type           TEXT,
-            annual_income       REAL,
-            credit_score        INTEGER,
-            employment_status   TEXT,
-            application_date    TEXT,
-            status              TEXT,
-            processed_by        TEXT DEFAULT 'automation'
+        CREATE TABLE IF NOT EXISTS patients (
+            patient_id          TEXT PRIMARY KEY,
+            name                TEXT NOT NULL,
+            age                 INTEGER,
+            gender              TEXT,
+            symptoms            TEXT,
+            symptom_duration    TEXT,
+            pain_scale          INTEGER,
+            medical_history     TEXT,
+            current_medications TEXT,
+            allergies           TEXT,
+            weight_kg           REAL,
+            lives_alone         INTEGER DEFAULT 0,
+            emergency_contacts  TEXT,
+            insurance_status    TEXT DEFAULT 'active',
+            admitted_at         TEXT NOT NULL
         )
     """)
 
+    # VITAL SIGNS
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS loan_decisions (
-            decision_id         INTEGER PRIMARY KEY AUTOINCREMENT,
-            application_id      INTEGER NOT NULL,
-            decision            TEXT NOT NULL,
-            reason              TEXT,
-            decided_at          TEXT NOT NULL,
-            decided_by          TEXT NOT NULL,
-            FOREIGN KEY (application_id) REFERENCES loan_applications(application_id)
+        CREATE TABLE IF NOT EXISTS vital_signs (
+            vital_id            INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id          TEXT NOT NULL,
+            heart_rate          INTEGER,
+            blood_pressure      TEXT,
+            temperature_f       REAL,
+            oxygen_saturation   INTEGER,
+            recorded_at         TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
         )
     """)
 
-    # AUTOMATION 2: FRAUD DETECTION
+    # ARIA - PATIENT SCENARIOS
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS transactions (
-            transaction_id      INTEGER PRIMARY KEY,
-            customer_id         INTEGER,
-            account_id          TEXT,
-            amount              REAL,
-            transaction_type    TEXT,
-            merchant            TEXT,
-            location            TEXT,
-            transaction_date    TEXT,
-            status              TEXT,
-            is_fraudulent       INTEGER DEFAULT 0
+        CREATE TABLE IF NOT EXISTS patient_scenarios (
+            scenario_id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id          TEXT NOT NULL,
+            priority            TEXT NOT NULL,
+            best_case           TEXT,
+            moderate_case       TEXT,
+            worst_case          TEXT,
+            unknown_risks       TEXT,
+            requires_approval   INTEGER DEFAULT 0,
+            head_approved       INTEGER DEFAULT 0,
+            approved_by         TEXT,
+            approved_at         TEXT,
+            generated_at        TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
         )
     """)
 
+    # SAFE - SAFETY VALIDATIONS
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS fraud_alerts (
-            alert_id            INTEGER PRIMARY KEY AUTOINCREMENT,
-            transaction_id      INTEGER NOT NULL,
-            alert_type          TEXT NOT NULL,
+        CREATE TABLE IF NOT EXISTS safety_validations (
+            validation_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id          TEXT NOT NULL,
+            scenario_type       TEXT NOT NULL,
+            status              TEXT NOT NULL,
+            issues              TEXT,
+            warnings            TEXT,
+            validated_at        TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+        )
+    """)
+
+    # GUARDIAN - DOCTOR ASSIGNMENTS
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS doctor_assignments (
+            assignment_id       INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id          TEXT NOT NULL,
+            doctor_id           TEXT NOT NULL,
+            doctor_name         TEXT NOT NULL,
+            specialty           TEXT,
+            priority            TEXT,
+            estimated_wait      INTEGER,
+            assigned_at         TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
+        )
+    """)
+
+    # GUARDIAN - CONDUCT ALERTS
+    cursor.execute("""
+        CREATE TABLE IF NOT EXISTS conduct_alerts (
+            alert_id            TEXT PRIMARY KEY,
+            doctor_id           TEXT NOT NULL,
+            patient_id          TEXT NOT NULL,
+            action              TEXT NOT NULL,
             severity            TEXT NOT NULL,
             description         TEXT,
-            created_at          TEXT NOT NULL,
+            recommended_action  TEXT,
+            head_notified       INTEGER DEFAULT 1,
             resolved            INTEGER DEFAULT 0,
-            FOREIGN KEY (transaction_id) REFERENCES transactions(transaction_id)
+            created_at          TEXT NOT NULL
         )
     """)
 
-    # AUTOMATION 3: ACCOUNT ONBOARDING
+    # CARA - RECOVERY TRACKING
     cursor.execute("""
-        CREATE TABLE IF NOT EXISTS customers (
-            customer_id         INTEGER PRIMARY KEY,
-            full_name           TEXT,
-            email               TEXT,
-            phone               TEXT,
-            date_of_birth       TEXT,
-            address             TEXT,
-            nationality         TEXT,
-            kyc_verified        INTEGER DEFAULT 0,
-            account_type        TEXT,
-            onboarding_status   TEXT,
-            created_at          TEXT
+        CREATE TABLE IF NOT EXISTS recovery_records (
+            record_id           INTEGER PRIMARY KEY AUTOINCREMENT,
+            patient_id          TEXT NOT NULL,
+            discharge_status    TEXT NOT NULL,
+            criteria_met        INTEGER,
+            criteria_total      INTEGER,
+            blockers            TEXT,
+            warnings            TEXT,
+            follow_up_date      TEXT,
+            follow_up_type      TEXT,
+            patient_message     TEXT,
+            assessed_at         TEXT NOT NULL,
+            FOREIGN KEY (patient_id) REFERENCES patients(patient_id)
         )
     """)
 
-    cursor.execute("""
-        CREATE TABLE IF NOT EXISTS bank_accounts (
-            account_id          TEXT PRIMARY KEY,
-            customer_id         INTEGER NOT NULL,
-            account_type        TEXT NOT NULL,
-            balance             REAL NOT NULL DEFAULT 0.0,
-            currency            TEXT NOT NULL,
-            status              TEXT NOT NULL,
-            created_at          TEXT NOT NULL,
-            last_updated        TEXT NOT NULL,
-            FOREIGN KEY (customer_id) REFERENCES customers(customer_id)
-        )
-    """)
-
-    # SHADOWGATE SYSTEM TABLES
+    # SHADOWGATE - AUDIT LOG
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS audit_log (
             log_id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -122,6 +150,7 @@ def create_all_tables():
             agent_name          TEXT NOT NULL,
             automation_name     TEXT NOT NULL,
             action              TEXT NOT NULL,
+            patient_id          TEXT,
             input_summary       TEXT,
             output_summary      TEXT,
             decision            TEXT,
@@ -131,6 +160,7 @@ def create_all_tables():
         )
     """)
 
+    # SHADOWGATE - TEST RESULTS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS test_results (
             result_id           INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -146,6 +176,7 @@ def create_all_tables():
         )
     """)
 
+    # SHADOWGATE - SIMULATION RUNS
     cursor.execute("""
         CREATE TABLE IF NOT EXISTS simulation_runs (
             run_id              INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -162,7 +193,7 @@ def create_all_tables():
 
     conn.commit()
     conn.close()
-    print("✅ All database tables created successfully")
+    print("All hospital database tables created successfully")
 
 
 if __name__ == "__main__":

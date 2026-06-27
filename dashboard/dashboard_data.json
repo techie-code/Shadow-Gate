@@ -1,260 +1,46 @@
 {
-  "generated_at": "2026-06-25 07:28:07",
-  "deployment": {
-    "signal": "GREEN",
-    "overall_confidence": 95.0
+  "updated_at": "2026-06-27 14:11:47",
+  "deployment_signal": "GREEN",
+  "overall_confidence": 95.0,
+  "automations": {
+    "ARIA": {
+      "confidence_score": 95.0,
+      "pass_rate": 100.0,
+      "health_score": 100,
+      "coverage_score": 100.0,
+      "status": "HEALTHY"
+    },
+    "SAFE": {
+      "confidence_score": 95.0,
+      "pass_rate": 100.0,
+      "health_score": 100,
+      "coverage_score": 100.0,
+      "status": "HEALTHY"
+    },
+    "GUARDIAN": {
+      "confidence_score": 95.0,
+      "pass_rate": 100.0,
+      "health_score": 100,
+      "coverage_score": 100.0,
+      "status": "HEALTHY"
+    },
+    "CARA": {
+      "confidence_score": 95.0,
+      "pass_rate": 100.0,
+      "health_score": 100,
+      "coverage_score": 100.0,
+      "status": "HEALTHY"
+    }
   },
-  "automations": [
-    {
-      "name": "Loan Processing",
-      "subtitle": "Credit & DTI Validation",
-      "confidence_score": 95.0,
-      "pass_rate": 100.0,
-      "health_score": 100,
-      "coverage_score": 100.0,
-      "ai_behavior_score": 100.0,
-      "chaos_mode": false,
-      "duration": 3.78
-    },
-    {
-      "name": "Fraud Detection",
-      "subtitle": "Transaction Monitoring",
-      "confidence_score": 95.0,
-      "pass_rate": 100.0,
-      "health_score": 100,
-      "coverage_score": 100.0,
-      "ai_behavior_score": 100.0,
-      "chaos_mode": false,
-      "duration": 3.62
-    },
-    {
-      "name": "Account Onboarding",
-      "subtitle": "KYC & Compliance",
-      "confidence_score": 95.0,
-      "pass_rate": 100.0,
-      "health_score": 100,
-      "coverage_score": 100.0,
-      "ai_behavior_score": 100.0,
-      "chaos_mode": false,
-      "duration": 3.78
-    }
-  ],
-  "audit": [
-    {
-      "agent_name": "DeploymentReadiness",
-      "automation_name": "all_automations",
-      "action": "assess_deployment_readiness",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:06",
-      "output_summary": "Signal: GREEN. Score: 95.0/100. Blockers: 0"
-    },
-    {
-      "agent_name": "ReleaseGuardian",
-      "automation_name": "account_onboarding",
-      "action": "analyse_release_readiness",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:05",
-      "output_summary": "Confidence Score: 95.0/100. Risk: low"
-    },
-    {
-      "agent_name": "AIBehaviorValidator",
-      "automation_name": "account_onboarding",
-      "action": "validate_ai_behavior",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:05",
-      "output_summary": "Behavior score: 100.0/100. Passed: 3/3"
-    },
-    {
-      "agent_name": "ShadowGateOrchestrator",
-      "automation_name": "account_onboarding",
-      "action": "run_full_pipeline",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:05",
-      "output_summary": "Confidence: 95.0/100, Pass: 100.0%"
-    },
-    {
-      "agent_name": "TestHealthAgent",
-      "automation_name": "account_onboarding",
-      "action": "scan_test_health",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:04",
-      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0"
-    },
-    {
-      "agent_name": "ValidatorAgent",
-      "automation_name": "account_onboarding",
-      "action": "validate_scenarios",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:03",
-      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%"
-    },
-    {
-      "agent_name": "CoverageIntelligence",
-      "automation_name": "account_onboarding",
-      "action": "analyse_coverage",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:02",
-      "output_summary": "Coverage score: 100.0/100. Gaps found: 3"
-    },
-    {
-      "agent_name": "ReleaseGuardian",
-      "automation_name": "fraud_detection",
-      "action": "analyse_release_readiness",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:01",
-      "output_summary": "Confidence Score: 95.0/100. Risk: low"
-    },
-    {
-      "agent_name": "AIBehaviorValidator",
-      "automation_name": "fraud_detection",
-      "action": "validate_ai_behavior",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:01",
-      "output_summary": "Behavior score: 100.0/100. Passed: 3/3"
-    },
-    {
-      "agent_name": "ShadowGateOrchestrator",
-      "automation_name": "fraud_detection",
-      "action": "run_full_pipeline",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:01",
-      "output_summary": "Confidence: 95.0/100, Pass: 100.0%"
-    },
-    {
-      "agent_name": "TestHealthAgent",
-      "automation_name": "fraud_detection",
-      "action": "scan_test_health",
-      "status": "success",
-      "timestamp": "2026-06-25 07:28:00",
-      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0"
-    },
-    {
-      "agent_name": "CoverageIntelligence",
-      "automation_name": "fraud_detection",
-      "action": "analyse_coverage",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:59",
-      "output_summary": "Coverage score: 100.0/100. Gaps found: 3"
-    },
-    {
-      "agent_name": "ValidatorAgent",
-      "automation_name": "fraud_detection",
-      "action": "validate_scenarios",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:59",
-      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%"
-    },
-    {
-      "agent_name": "ReleaseGuardian",
-      "automation_name": "loan_processing",
-      "action": "analyse_release_readiness",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:58",
-      "output_summary": "Confidence Score: 95.0/100. Risk: low"
-    },
-    {
-      "agent_name": "AIBehaviorValidator",
-      "automation_name": "loan_processing",
-      "action": "validate_ai_behavior",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:58",
-      "output_summary": "Behavior score: 100.0/100. Passed: 3/3"
-    },
-    {
-      "agent_name": "ShadowGateOrchestrator",
-      "automation_name": "loan_processing",
-      "action": "run_full_pipeline",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:58",
-      "output_summary": "Confidence: 95.0/100, Pass: 100.0%"
-    },
-    {
-      "agent_name": "TestHealthAgent",
-      "automation_name": "loan_processing",
-      "action": "scan_test_health",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:56",
-      "output_summary": "Health score: 100/100. Fragile: 0, Outdated: 0"
-    },
-    {
-      "agent_name": "CoverageIntelligence",
-      "automation_name": "loan_processing",
-      "action": "analyse_coverage",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:55",
-      "output_summary": "Coverage score: 100.0/100. Gaps found: 3"
-    },
-    {
-      "agent_name": "ValidatorAgent",
-      "automation_name": "loan_processing",
-      "action": "validate_scenarios",
-      "status": "success",
-      "timestamp": "2026-06-25 07:27:55",
-      "output_summary": "Passed: 10, Failed: 0, Pass Rate: 100.0%"
-    },
-    {
-      "agent_name": "DeploymentReadiness",
-      "automation_name": "all_automations",
-      "action": "assess_deployment_readiness",
-      "status": "success",
-      "timestamp": "2026-06-25 07:26:25",
-      "output_summary": "Signal: GREEN. Score: 95.0/100. Blockers: 0"
-    }
-  ],
-  "gaps": [
-    {
-      "automation": "Loan Processing",
-      "area": "Annual Income Validation",
-      "description": "No test case exists to validate that annual_income is a positive number, which is a requirement for loan processing",
-      "risk": "medium"
-    },
-    {
-      "automation": "Loan Processing",
-      "area": "Loan Amount Validation",
-      "description": "There is no test case to validate that loan_amount is a positive number, which is a requirement for loan processing",
-      "risk": "medium"
-    },
-    {
-      "automation": "Loan Processing",
-      "area": "Debt-to-Income Ratio Calculation",
-      "description": "Although DTI Boundary test exists, it does not cover the scenario where the debt-to-income ratio is calculated incorrectly due to invalid or missing input values, which could lead to incorrect approval decisions",
-      "risk": "high"
-    },
-    {
-      "automation": "Fraud Detection",
-      "area": "Transaction with Missing Customer ID",
-      "description": "The existing tests do not cover a scenario where the customer_id is missing, which is a required field for transaction validation",
-      "risk": "medium"
-    },
-    {
-      "automation": "Fraud Detection",
-      "area": "Transaction with Invalid Location",
-      "description": "There is no test for a transaction with an invalid location, which could be a potential fraud indicator",
-      "risk": "medium"
-    },
-    {
-      "automation": "Fraud Detection",
-      "area": "Transaction with Known Fraud Indicators",
-      "description": "The existing tests do not cover a scenario where a transaction contains known fraud indicators, which is a critical aspect of fraud detection",
-      "risk": "high"
-    },
-    {
-      "automation": "Account Onboarding",
-      "area": "Phone Number Validation",
-      "description": "The existing tests do not cover a scenario where a customer has an invalid phone number format, which is a required field for onboarding",
-      "risk": "medium"
-    },
-    {
-      "automation": "Account Onboarding",
-      "area": "Address Validation",
-      "description": "There is no test for a customer with an invalid or missing address, which is a required field for onboarding",
-      "risk": "medium"
-    },
-    {
-      "automation": "Account Onboarding",
-      "area": "Customers from High-Risk Nationalities",
-      "description": "The existing tests do not cover a scenario where a customer is from a high-risk nationality and requires additional checks before approval or rejection",
-      "risk": "high"
-    }
-  ]
+  "hospital_summary": {
+    "total_patients": 3,
+    "p1_critical": 2,
+    "unknown_risks_discovered": 9,
+    "treatments_blocked": 0,
+    "approved_for_discharge": 3,
+    "follow_ups_scheduled": 3,
+    "conduct_alerts": 0,
+    "duration_seconds": 9.92,
+    "completed_at": "2026-06-27 14:11:20"
+  }
 }

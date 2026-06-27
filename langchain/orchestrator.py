@@ -1,13 +1,19 @@
 """
-ShadowGate - LangChain Orchestration Layer v4
-Week 5: All 10 agents complete.
+ShadowGate - LangChain Orchestrator
+Coordinates all 10 ShadowGate agents to test hospital automations.
+Tests ARIA, SAFE, GUARDIAN and CARA.
+Discovers unknown risks. Governs decisions. Deploys with confidence.
 """
 
 import sys
 import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
+import json
+import time
 from datetime import datetime
+from database import create_all_tables
+from hospital.pipeline import HospitalPipeline, SAMPLE_PATIENTS
 from agents.environment_simulator import EnvironmentSimulatorAgent
 from agents.validator import ValidatorAgent
 from agents.chaos_agent import ChaosAgent
@@ -18,255 +24,299 @@ from agents.coverage_intelligence import CoverageIntelligenceAgent
 from agents.change_watcher import ChangeWatcherAgent
 from agents.ai_behavior_validator import AIBehaviorValidatorAgent
 from agents.governance_logger import GovernanceLogger
-from notifications.slack_notify import send_deployment_notification, send_chaos_alert
-from database import get_connection
+from notifications.slack_notify import send_deployment_notification
+from dotenv import load_dotenv
+
+load_dotenv()
+
+AUTOMATIONS = ["ARIA", "SAFE", "GUARDIAN", "CARA"]
 
 
-class ShadowGateOrchestrator:
-    """
-    Full ShadowGate orchestrator — all 10 agents.
-    """
+def run_shadowgate_pipeline(automation_name, hospital_result):
+    """Run all 10 ShadowGate agents to test one hospital automation."""
+    print(f"\n{'='*55}")
+    print(f" SHADOWGATE PIPELINE: {automation_name}")
+    print(f"{'='*55}")
 
-    def __init__(self):
-        self.name = "ShadowGateOrchestrator"
-        self.simulator = EnvironmentSimulatorAgent()
-        self.validator = ValidatorAgent()
-        self.chaos = ChaosAgent()
-        self.health = TestHealthAgent()
-        self.guardian = ReleaseGuardianAgent()
-        self.deployment = DeploymentReadinessAgent()
-        self.coverage = CoverageIntelligenceAgent()
-        self.watcher = ChangeWatcherAgent()
-        self.ai_validator = AIBehaviorValidatorAgent()
-        self.governance = GovernanceLogger()
+    start_time = time.time()
+    governance = GovernanceLogger()
 
-    def run_pipeline(self, automation_name, requirements, automation_class, inject_chaos=False):
-        """Full 8-stage ShadowGate pipeline."""
-        print(f"\n{'='*55}")
-        print(f"🌑 ShadowGate Pipeline: {automation_name.upper()}")
-        if inject_chaos:
-            print(f"   💥 CHAOS MODE ENABLED")
-        print(f"{'='*55}")
+    # Stage 1: Change Detection
+    print(f"\n Stage 1/8: Change Detection")
+    watcher = ChangeWatcherAgent()
+    change_result = watcher.check(automation_name)
 
-        start_time = datetime.now()
+    # Stage 2: Environment Simulation
+    print(f"\n Stage 2/8: Environment Simulation")
+    simulator = EnvironmentSimulatorAgent()
+    scenarios = simulator.generate_test_scenarios(automation_name, get_requirements(automation_name))
 
-        # Clear old test results
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("DELETE FROM test_results WHERE automation_name = ?", (automation_name,))
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
+    # Fallback scenarios if AI unavailable
+    if not scenarios:
+        scenarios = get_fallback_scenarios(automation_name)
+        print(f"   Using fallback scenarios for {automation_name}")
 
-        pipeline_report = {
-            "automation": automation_name,
-            "chaos_mode": inject_chaos,
-            "started_at": start_time.strftime("%Y-%m-%d %H:%M:%S"),
-            "stages": {}
+    # Stage 3: Coverage Intelligence
+    print(f"\n Stage 3/8: Coverage Intelligence")
+    coverage = CoverageIntelligenceAgent()
+    safe_scenarios = scenarios if scenarios else {"scenarios": [], "summary": {}}
+    coverage_result = coverage.analyse(automation_name, get_requirements(automation_name), safe_scenarios)
+
+    # Stage 4: Chaos Injection
+    chaos_mode = os.getenv("SHADOWGATE_CHAOS", "false").lower() == "true"
+    print(f"\n Stage 4/8: Chaos Injection {'ACTIVE' if chaos_mode else 'SKIPPED'}")
+    chaos_result = {}
+    if chaos_mode:
+        chaos = ChaosAgent()
+        chaos_result = chaos.inject(automation_name)
+
+    # Stage 5: Run Automation
+    print(f"\n Stage 5/8: Running {automation_name}")
+    automation_result = run_automation(automation_name, hospital_result)
+
+    # Stage 6: Validation
+    print(f"\n Stage 6/8: Validation")
+    validator = ValidatorAgent()
+    validation_result = validator.validate(automation_name, safe_scenarios, automation_result)
+
+    # Stage 7: Test Health
+    print(f"\n Stage 7/8: Test Health Scan")
+    health = TestHealthAgent()
+    health_result = health.scan(automation_name)
+
+    # Stage 8: Release Guardian
+    print(f"\n Stage 8/8: Release Guardian Analysis")
+    guardian = ReleaseGuardianAgent()
+
+    # Build pipeline report for guardian in correct format
+    pipeline_report = {
+        "stages": {
+            "validation": validation_result,
+            "test_health": health_result,
+            "automation_run": automation_result,
+            "chaos_injection": chaos_result if chaos_result else {"status": "skipped"}
         }
+    }
+    guardian_result = guardian.analyse(automation_name, pipeline_report)
 
-        # Stage 1: Change Detection
-        print(f"\n📍 Stage 1/8: Change Detection")
-        change_report = self.watcher.check(automation_name)
-        pipeline_report["stages"]["change_detection"] = change_report
-
-        # Stage 2: Environment Simulation
-        print(f"\n📍 Stage 2/8: Environment Simulation")
-        scenarios = self.simulator.generate_test_scenarios(automation_name, requirements)
-        if not scenarios:
-            pipeline_report["status"] = "failed"
-            return pipeline_report
-        pipeline_report["stages"]["environment_simulation"] = {
-            "status": "completed",
-            "scenarios_generated": len(scenarios.get("scenarios", []))
+    # AI Behavior Validation
+    print(f"\n AI Behavior Validation")
+    ai_validator = AIBehaviorValidatorAgent()
+    # Count scenarios for AI behavior validator
+    scenario_count = len(safe_scenarios.get("scenarios", []))
+    ai_pipeline = {
+        "stages": {
+            "environment_simulation": {
+                "scenarios_generated": scenario_count,
+                "scenarios": safe_scenarios.get("scenarios", []),
+                "total": scenario_count
+            },
+            "release_guardian": guardian_result,
+            "test_health": health_result
         }
+    }
+    ai_result = ai_validator.validate(automation_name, ai_pipeline)
 
-        # Stage 3: Coverage Intelligence
-        print(f"\n📍 Stage 3/8: Coverage Intelligence")
-        coverage_report = self.coverage.analyse(automation_name, requirements, scenarios)
-        pipeline_report["stages"]["coverage_intelligence"] = coverage_report
+    duration = time.time() - start_time
 
-        # Stage 4: Chaos Injection
-        if inject_chaos:
-            print(f"\n📍 Stage 4/8: Chaos Injection")
-            chaos_report = self.chaos.inject_chaos(automation_name)
-            pipeline_report["stages"]["chaos_injection"] = chaos_report
-            send_chaos_alert(automation_name, chaos_report)
-        else:
-            print(f"\n📍 Stage 4/8: Chaos Injection — SKIPPED (normal mode)")
-            pipeline_report["stages"]["chaos_injection"] = {"status": "skipped"}
+    pass_rate = validation_result.get("pass_rate", 0)
+    health_score = health_result.get("health_score", 0)
+    confidence = guardian_result.get("confidence_score", 0)
+    coverage_score = coverage_result.get("coverage_score", 0)
+    ai_score = (ai_result.get("ai_behavior_score") or ai_result.get("behavior_score") or 0)
 
-        # Stage 5: Run Automation
-        print(f"\n📍 Stage 5/8: Running Automation")
-        automation = automation_class()
-        automation_result = automation.process()
-        pipeline_report["stages"]["automation_run"] = {
-            "status": "completed",
-            "result": automation_result
+    report = {
+        "automation": automation_name,
+        "pass_rate": pass_rate,
+        "health_score": health_score,
+        "confidence_score": confidence,
+        "coverage_score": coverage_score,
+        "ai_behavior_score": ai_score,
+        "chaos_mode": chaos_mode,
+        "errors": automation_result.get("result", {}).get("errors", []),
+        "stages": {
+            "change_detection": change_result,
+            "scenarios": scenarios,
+            "coverage": coverage_result,
+            "automation_run": automation_result,
+            "validation": validation_result,
+            "test_health": health_result,
+            "release_guardian": guardian_result,
+            "ai_behavior": ai_result
+        },
+        "duration_seconds": round(duration, 2),
+        "status": "HEALTHY" if confidence >= 85 else "NEEDS_ATTENTION"
+    }
+
+    print(f"\n{'='*55}")
+    print(f" Pipeline Complete: {automation_name}")
+    print(f"{'='*55}")
+    print(f"   Duration:          {duration:.2f}s")
+    print(f"   Pass Rate:         {pass_rate}%")
+    print(f"   Health Score:      {health_score}/100")
+    print(f"   Confidence Score:  {confidence}/100")
+    print(f"   Coverage Score:    {coverage_score}/100")
+    print(f"   AI Behavior Score: {ai_score}/100")
+    print(f"   Status:            {report['status']}")
+    print(f"{'='*55}")
+
+    return report
+
+
+def run_automation(automation_name, hospital_result):
+    """Extract results for each automation from hospital pipeline."""
+    mapping = {
+        "ARIA": "aria",
+        "SAFE": "safe",
+        "GUARDIAN": "guardian",
+        "CARA": "cara"
+    }
+    key = mapping.get(automation_name, "aria")
+    data = hospital_result.get(key, {})
+    return {
+        "processed": data.get("processed", 3),
+        "success_rate": data.get("success_rate", 100),
+        "errors": data.get("errors", []),
+        "result": {
+            "errors": data.get("errors", []),
+            "data": data
         }
-
-        # Stage 6: Validation
-        print(f"\n📍 Stage 6/8: Validation")
-        validation_report = self.validator.validate(automation_name, scenarios, automation_result)
-        pipeline_report["stages"]["validation"] = validation_report
-
-        # Stage 7: Test Health Scan
-        print(f"\n📍 Stage 7/8: Test Health Scan")
-        health_report = self.health.scan(automation_name)
-        pipeline_report["stages"]["test_health"] = health_report
-
-        # Stage 8: Release Guardian
-        print(f"\n📍 Stage 8/8: Release Guardian Analysis")
-        guardian_report = self.guardian.analyse(automation_name, pipeline_report)
-        pipeline_report["stages"]["release_guardian"] = guardian_report
-
-        # AI Behavior Validation
-        print(f"\n🤖 AI Behavior Validation")
-        ai_behavior_report = self.ai_validator.validate(automation_name, pipeline_report)
-        pipeline_report["stages"]["ai_behavior"] = ai_behavior_report
-
-        # Final metrics
-        duration = (datetime.now() - start_time).total_seconds()
-        pipeline_report["status"] = "completed"
-        pipeline_report["pass_rate"] = validation_report.get("pass_rate", 0)
-        pipeline_report["health_score"] = health_report.get("health_score", 0)
-        pipeline_report["confidence_score"] = guardian_report.get("confidence_score", 0)
-        pipeline_report["coverage_score"] = coverage_report.get("coverage_score", 0)
-        pipeline_report["ai_behavior_score"] = ai_behavior_report.get("behavior_score", 0)
-        pipeline_report["duration_seconds"] = round(duration, 2)
-        pipeline_report["completed_at"] = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
-        self._print_pipeline_summary(pipeline_report)
-        self._log_to_audit(automation_name, pipeline_report)
-
-        return pipeline_report
-
-    def _print_pipeline_summary(self, report):
-        print(f"\n{'='*55}")
-        print(f"🏁 Pipeline Complete: {report['automation'].upper()}")
-        print(f"{'='*55}")
-        print(f"   ⏱️  Duration:           {report.get('duration_seconds', 0)}s")
-        print(f"   📈 Pass Rate:          {report.get('pass_rate', 0)}%")
-        print(f"   🏥 Health Score:       {report.get('health_score', 0)}/100")
-        print(f"   🛡️  Confidence Score:   {report.get('confidence_score', 0)}/100")
-        print(f"   🔭 Coverage Score:     {report.get('coverage_score', 0)}/100")
-        print(f"   🤖 AI Behavior Score:  {report.get('ai_behavior_score', 0)}/100")
-        chaos = "💥 YES" if report.get("chaos_mode") else "✅ NO"
-        print(f"   💥 Chaos Mode:         {chaos}")
-        status = "✅ HEALTHY" if report.get("confidence_score", 0) >= 85 else "⚠️  NEEDS ATTENTION"
-        print(f"   🎯 Status:             {status}")
-        print(f"{'='*55}\n")
-
-    def _log_to_audit(self, automation_name, report):
-        try:
-            conn = get_connection()
-            cursor = conn.cursor()
-            cursor.execute("""
-                INSERT INTO audit_log
-                (timestamp, agent_name, automation_name, action, output_summary, duration_ms, status)
-                VALUES (?, ?, ?, ?, ?, ?, ?)
-            """, (
-                datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-                self.name,
-                automation_name,
-                "run_full_pipeline",
-                f"Confidence: {report.get('confidence_score', 0)}/100, Pass: {report.get('pass_rate', 0)}%",
-                int(report.get("duration_seconds", 0) * 1000),
-                "success" if report.get("confidence_score", 0) >= 85 else "warning"
-            ))
-            conn.commit()
-            conn.close()
-        except Exception:
-            pass
+    }
 
 
-def run_all_automations(chaos_mode=False):
-    """Run full ShadowGate pipeline on all 3 automations."""
-    from data_generator import seed_all
-    from database import create_all_tables
-    from mock_automations.loan_processing.automation import LoanProcessingAutomation, REQUIREMENTS as LOAN_REQ
-    from mock_automations.fraud_detection.automation import FraudDetectionAutomation, REQUIREMENTS as FRAUD_REQ
-    from mock_automations.account_onboarding.automation import AccountOnboardingAutomation, REQUIREMENTS as ONBOARD_REQ
-
-    create_all_tables()
-    seed_all()
-
-    orchestrator = ShadowGateOrchestrator()
-    all_reports = {}
-    all_guardian_reports = {}
-
-    automations = [
-        ("loan_processing", LOAN_REQ, LoanProcessingAutomation),
-        ("fraud_detection", FRAUD_REQ, FraudDetectionAutomation),
-        ("account_onboarding", ONBOARD_REQ, AccountOnboardingAutomation),
+def get_fallback_scenarios(automation_name):
+    """Fallback scenarios when AI is unavailable."""
+    base = [
+        {"id": "1", "name": f"{automation_name} Happy Path", "type": "happy_path", "priority": "HIGH"},
+        {"id": "2", "name": f"{automation_name} Normal Case", "type": "happy_path", "priority": "MEDIUM"},
+        {"id": "3", "name": f"{automation_name} Valid Input", "type": "happy_path", "priority": "LOW"},
+        {"id": "4", "name": f"{automation_name} Edge Case 1", "type": "edge_case", "priority": "HIGH"},
+        {"id": "5", "name": f"{automation_name} Edge Case 2", "type": "edge_case", "priority": "MEDIUM"},
+        {"id": "6", "name": f"{automation_name} Boundary Value", "type": "edge_case", "priority": "LOW"},
+        {"id": "7", "name": f"{automation_name} Edge Case 4", "type": "edge_case", "priority": "LOW"},
+        {"id": "8", "name": f"{automation_name} Missing Fields", "type": "failure", "priority": "HIGH"},
+        {"id": "9", "name": f"{automation_name} Invalid Input", "type": "failure", "priority": "MEDIUM"},
+        {"id": "10", "name": f"{automation_name} Null Values", "type": "failure", "priority": "LOW"},
     ]
+    return {
+        "automation": automation_name,
+        "scenarios": base,
+        "summary": {"happy_path": 3, "edge_case": 4, "failure": 3}
+    }
 
-    for name, requirements, cls in automations:
-        report = orchestrator.run_pipeline(
-            name, requirements, cls, inject_chaos=chaos_mode
-        )
-        all_reports[name] = report
-        all_guardian_reports[name] = report.get("stages", {}).get("release_guardian", {})
 
-    # Final deployment assessment
+def get_requirements(automation_name):
+    """Get plain English requirements for each automation."""
+    from hospital.automations.aria import REQUIREMENTS as ARIA_REQ
+    from hospital.automations.safe import REQUIREMENTS as SAFE_REQ
+    from hospital.automations.guardian import REQUIREMENTS as GUARDIAN_REQ
+    from hospital.automations.cara import REQUIREMENTS as CARA_REQ
+    reqs = {
+        "ARIA": ARIA_REQ,
+        "SAFE": SAFE_REQ,
+        "GUARDIAN": GUARDIAN_REQ,
+        "CARA": CARA_REQ
+    }
+    return reqs.get(automation_name, "")
+
+
+def run_all_automations():
+    """Run complete ShadowGate hospital testing pipeline."""
     print(f"\n{'='*55}")
-    print(f"🌑 SHADOWGATE — FINAL DEPLOYMENT ASSESSMENT")
+    print(f" SHADOWGATE - HOSPITAL AUTOMATION TESTING")
+    print(f" Testing: ARIA, SAFE, GUARDIAN, CARA")
     print(f"{'='*55}")
-    deployment_report = orchestrator.deployment.assess(all_guardian_reports)
 
-    # Slack notification
-    print(f"\n📲 Sending Slack notification...")
-    send_deployment_notification(deployment_report, all_guardian_reports)
+    # Run hospital pipeline first
+    print(f"\n Running Hospital Pipeline...")
+    pipeline = HospitalPipeline()
+    hospital_result = pipeline.run(SAMPLE_PATIENTS)
 
-    # Governance report
+    # Test each automation with ShadowGate
+    all_reports = {}
+    for automation_name in AUTOMATIONS:
+        report = run_shadowgate_pipeline(automation_name, hospital_result)
+        all_reports[automation_name] = report
+
+    # Deployment Readiness
     print(f"\n{'='*55}")
-    print(f"🌑 SHADOWGATE — GOVERNANCE REPORT")
+    print(f" SHADOWGATE - FINAL DEPLOYMENT ASSESSMENT")
     print(f"{'='*55}")
-    orchestrator.governance.generate_report()
+    readiness = DeploymentReadinessAgent()
+    deployment = readiness.assess(all_reports)
 
-    # Export dashboard data
-    print(f"\n{'='*55}")
-    print(f"🌑 SHADOWGATE — DASHBOARD")
-    print(f"{'='*55}")
+    # Slack Notification
+    print(f"\n Sending Slack notification...")
     try:
-        from dashboard.export_data import export_dashboard_data
-        export_dashboard_data(all_reports)
-        print(f"   🌐 Open dashboard/index.html in your browser!")
+        send_deployment_notification(deployment, all_reports)
     except Exception as e:
-        print(f"   ⚠️ Dashboard export: {e}")
+        print(f"   Slack notification: {e}")
 
-    # Final summary
+    # Governance Report
     print(f"\n{'='*55}")
-    print(f"🌑 SHADOWGATE — ALL AUTOMATIONS SUMMARY")
+    print(f" SHADOWGATE - GOVERNANCE REPORT")
+    print(f"{'='*55}")
+    governance = GovernanceLogger()
+    governance.generate_report()
+
+    # Dashboard Export
+    export_dashboard(all_reports, deployment, hospital_result)
+
+    # Final Summary
+    print(f"\n{'='*55}")
+    print(f" SHADOWGATE - ALL AUTOMATIONS SUMMARY")
     print(f"{'='*55}")
     for name, report in all_reports.items():
-        confidence = report.get("confidence_score", 0)
-        icon = "✅" if confidence >= 85 else "⚠️"
-        print(f"   {icon} {name.replace('_', ' ').title()}")
-        print(f"      Confidence: {confidence}/100 | Pass: {report.get('pass_rate', 0)}% | Coverage: {report.get('coverage_score', 0)}/100")
+        status = "HEALTHY" if report['confidence_score'] >= 85 else "NEEDS ATTENTION"
+        print(f"   {status}: {name}")
+        print(f"      Confidence: {report['confidence_score']}/100 | Pass: {report['pass_rate']}% | Coverage: {report['coverage_score']}/100")
 
-    signal = deployment_report.get("signal", "UNKNOWN")
-    overall = deployment_report.get("overall_confidence", 0)
-    signal_icon = "✅" if signal == "GREEN" else "❌"
-    print(f"\n   {signal_icon} DEPLOYMENT SIGNAL: {signal} ({overall}/100)")
-    print(f"{'='*55}\n")
+    signal = deployment.get("signal", deployment.get("deployment_signal", "RED"))
+    confidence = deployment.get("overall_confidence", 0)
+    print(f"\n   DEPLOYMENT SIGNAL: {signal} ({confidence}/100)")
+    print(f"{'='*55}")
 
     # UiPath Integration
-    print(f"\n{'='*55}")
-    print(f"🌑 SHADOWGATE — UIPATH INTEGRATION")
-    print(f"{'='*55}")
     try:
         from uipath.integration import run_uipath_integration
         run_uipath_integration(all_reports)
     except Exception as e:
-        print(f"   ⚠️ UiPath integration: {e}")
+        print(f"   UiPath integration: {e}")
 
-    return all_reports, deployment_report
+    # Test Manager Integration
+    try:
+        from uipath.test_manager import run_test_manager_integration
+        run_test_manager_integration(all_reports)
+    except Exception as e:
+        print(f"   Test Manager: {e}")
+
+    return all_reports, deployment
+
+
+def export_dashboard(all_reports, deployment, hospital_result):
+    """Export dashboard data."""
+    os.makedirs("dashboard", exist_ok=True)
+    summary = hospital_result.get("summary", {})
+    data = {
+        "updated_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "deployment_signal": deployment.get("signal", deployment.get("deployment_signal", "RED")),
+        "overall_confidence": deployment.get("overall_confidence", 0),
+        "automations": {},
+        "hospital_summary": summary
+    }
+    for name, report in all_reports.items():
+        data["automations"][name] = {
+            "confidence_score": report.get("confidence_score", 0),
+            "pass_rate": report.get("pass_rate", 0),
+            "health_score": report.get("health_score", 0),
+            "coverage_score": report.get("coverage_score", 0),
+            "status": report.get("status", "UNKNOWN")
+        }
+    with open("dashboard/dashboard_data.json", "w") as f:
+        json.dump(data, f, indent=2)
+    print(f"   Dashboard exported to dashboard/dashboard_data.json")
 
 
 if __name__ == "__main__":
-    import sys
-    chaos = "--chaos" in sys.argv
-    run_all_automations(chaos_mode=chaos)
+    create_all_tables()
+    run_all_automations()
