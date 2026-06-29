@@ -99,7 +99,16 @@ class CARA:
         )
 
         # Check for new symptoms
-        new_symptoms = treatment_data.get("new_symptoms", [])
+        raw_new_symptoms = treatment_data.get("new_symptoms", [])
+        # Filter out empty strings, "none", "no", "nil" etc
+        no_symptom_words = ["none", "no", "nothing", "nil", "n/a", "na", "nope", "no symptoms"]
+        if isinstance(raw_new_symptoms, list):
+            new_symptoms = [s for s in raw_new_symptoms if s and s.strip().lower() not in no_symptom_words]
+        elif isinstance(raw_new_symptoms, str):
+            new_symptoms = [] if raw_new_symptoms.strip().lower() in no_symptom_words or not raw_new_symptoms.strip() else [raw_new_symptoms]
+        else:
+            new_symptoms = []
+
         if new_symptoms:
             discharge_check["status"] = "BLOCKED"
             discharge_check["blockers"].append({

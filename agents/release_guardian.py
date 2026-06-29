@@ -1,6 +1,6 @@
 """
 ShadowGate - Agent 5: Release Guardian
-The most powerful agent — analyses all test results,
+The most powerful agent - analyses all test results,
 calculates a Release Confidence Score (0-100),
 and recommends specific fixes using AI.
 """
@@ -26,10 +26,10 @@ class ReleaseGuardianAgent:
 
     def analyse(self, automation_name, pipeline_report):
         """
-        Main method — analyses full pipeline report.
+        Main method - analyses full pipeline report.
         Returns confidence score + fix recommendations.
         """
-        print(f"\n🛡️  Release Guardian Agent — {automation_name.upper()}")
+        print(f"\n🛡️  Release Guardian Agent - {automation_name.upper()}")
         print(f"🔍 Analysing pipeline results...\n")
 
         # Extract key metrics
@@ -92,7 +92,7 @@ class ReleaseGuardianAgent:
         error_contribution = 20 - error_penalty
 
         # Chaos resilience bonus (10% weight)
-        # If chaos was injected and automation still ran — bonus points
+        # If chaos was injected and automation still ran - bonus points
         chaos_bonus = min(chaos_injections * 3, 10) if chaos_injections > 0 else 5
 
         score = base + health_contribution + error_contribution + chaos_bonus
@@ -110,7 +110,7 @@ class ReleaseGuardianAgent:
 
             system_prompt = """You are a senior software engineer reviewing automation test results.
 Provide specific, actionable fix recommendations.
-Be concise — maximum 3 recommendations.
+Be concise - maximum 3 recommendations.
 No markdown, no bullets, use plain numbered list."""
 
             user_prompt = f"""Automation: {automation_name}
@@ -214,4 +214,4 @@ Give exactly 3 specific fix recommendations numbered 1, 2, 3."""
 
 
 if __name__ == "__main__":
-    print("Release Guardian Agent — run via orchestrator.py")
+    print("Release Guardian Agent - run via orchestrator.py")

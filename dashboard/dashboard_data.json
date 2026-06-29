@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-06-27 18:50:34",
+  "updated_at": "2026-06-30 00:40:22",
   "deployment_signal": "GREEN",
   "overall_confidence": 95.0,
   "automations": {
@@ -40,7 +40,7 @@
     "approved_for_discharge": 4,
     "follow_ups_scheduled": 4,
     "conduct_alerts": 0,
-    "duration_seconds": 7.54,
-    "completed_at": "2026-06-27 18:50:24"
+    "duration_seconds": 12.26,
+    "completed_at": "2026-06-30 00:40:06"
   }
 }

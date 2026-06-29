@@ -673,7 +673,7 @@ sdk.governance.compensate(hook: str, validators: list[str], rules: list[uipath.c
 # Asynchronously POST a compensating ``/runtime/govern`` call.
 sdk.governance.compensate_async(hook: str, validators: list[str], rules: list[uipath.core.governance.providers.FiredRule], data: dict[str, Any], trace_id: str, src_timestamp: str, agent_name: str, runtime_id: str, folder_key: str | None=None, job_key: str | None=None, process_key: str | None=None, reference_id: str | None=None, agent_version: str | None=None) -> None
 
-# Fetch the policy pack — :class:`GovernancePolicyProvider` adapter.
+# Fetch the policy pack - :class:`GovernancePolicyProvider` adapter.
 sdk.governance.get_policy(context: uipath.core.governance.providers.PolicyContext) -> uipath.core.governance.providers.PolicyResponse
 
 # Async variant of :meth:`get_policy`.

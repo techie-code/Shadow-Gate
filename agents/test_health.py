@@ -30,7 +30,7 @@ class TestHealthAgent:
         Scan test results for an automation.
         Returns health report with flagged tests.
         """
-        print(f"\n🏥 Test Health Agent — {automation_name.upper()}")
+        print(f"\n🏥 Test Health Agent - {automation_name.upper()}")
         print(f"🔍 Scanning test suite for issues...\n")
 
         # Get test history from DB
@@ -144,7 +144,7 @@ class TestHealthAgent:
             if name in seen_names:
                 redundant.append({
                     "test_name": test["test_name"],
-                    "recommendation": "Duplicate test — consider consolidating"
+                    "recommendation": "Duplicate test - consider consolidating"
                 })
             seen_names.add(name)
 
@@ -198,7 +198,7 @@ Give a 2-3 sentence health summary and top recommendation."""
         if report["fragile_tests"]:
             print(f"\n   🔴 Fragile Tests ({len(report['fragile_tests'])}):")
             for t in report["fragile_tests"]:
-                print(f"      • {t['test_name']} — {t['failure_rate']}% failure rate")
+                print(f"      • {t['test_name']} - {t['failure_rate']}% failure rate")
 
         if report["outdated_tests"]:
             print(f"\n   🟡 Outdated Tests ({len(report['outdated_tests'])}):")

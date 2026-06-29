@@ -20,7 +20,7 @@ def send_deployment_notification(deployment_report, guardian_reports):
     webhook_url = os.getenv("SLACK_WEBHOOK_URL")  # IT/Deployment channel
 
     if not webhook_url or webhook_url == "your_slack_webhook_url_here":
-        print(f"   📲 Slack: No webhook configured — skipping notification")
+        print(f"   📲 Slack: No webhook configured - skipping notification")
         print(f"   💡 Add SLACK_WEBHOOK_URL to .env to enable Slack notifications")
         return False
 
@@ -32,11 +32,11 @@ def send_deployment_notification(deployment_report, guardian_reports):
     if signal == "GREEN":
         emoji = "✅"
         color = "#36a64f"
-        title = "ShadowGate — Deployment Approved"
+        title = "ShadowGate - Deployment Approved"
     else:
         emoji = "🚨"
         color = "#ff0000"
-        title = "ShadowGate — Deployment Blocked"
+        title = "ShadowGate - Deployment Blocked"
 
     # Individual scores text
     scores_text = "\n".join([
@@ -110,7 +110,7 @@ def send_chaos_alert(automation_name, chaos_report):
 
     injections = chaos_report.get("successful_injections", 0)
     payload = {
-        "text": f"💥 *ShadowGate Chaos Alert* — {automation_name.replace('_', ' ').title()}\n"
+        "text": f"💥 *ShadowGate Chaos Alert* - {automation_name.replace('_', ' ').title()}\n"
                 f"Injected {injections} failure(s) into automation for testing.\n"
                 f"Monitor results carefully."
     }

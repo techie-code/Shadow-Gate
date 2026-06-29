@@ -38,7 +38,7 @@ def get_access_token():
             print(f"   ✅ UiPath authentication successful")
             return token
         else:
-            print(f"   ⚠️ Auth failed: {response.status_code} — {response.text[:200]}")
+            print(f"   ⚠️ Auth failed: {response.status_code} - {response.text[:200]}")
             return None
     except Exception as e:
         print(f"   ⚠️ Auth error: {e}")
@@ -91,7 +91,7 @@ Provide:
             print(f"   ✅ UiPath agent invoked for {automation_name}")
             return response.json()
         else:
-            print(f"   ⚠️ Agent call failed: {response.status_code} — {response.text[:100]}")
+            print(f"   ⚠️ Agent call failed: {response.status_code} - {response.text[:100]}")
             return None
     except Exception as e:
         print(f"   ⚠️ Agent call error: {e}")
@@ -99,7 +99,7 @@ Provide:
 
 
 def run_uipath_integration(all_reports):
-    """Main integration — called after Python pipeline completes."""
+    """Main integration - called after Python pipeline completes."""
     print(f"\n🔗 UiPath Integration")
     print(f"🌐 Connecting to UiPath Automation Cloud...")
 
@@ -133,7 +133,7 @@ def test_connection():
         print(f"   ✅ Connection successful!")
         return True
     else:
-        print(f"   ❌ Connection failed — check credentials in .env")
+        print(f"   ❌ Connection failed - check credentials in .env")
         return False
 
 

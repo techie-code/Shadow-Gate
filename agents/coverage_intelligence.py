@@ -28,7 +28,7 @@ class CoverageIntelligenceAgent:
         Analyse coverage gaps and suggest missing scenarios.
         Returns coverage report.
         """
-        print(f"\n🔭 Coverage Intelligence Agent — {automation_name.upper()}")
+        print(f"\n🔭 Coverage Intelligence Agent - {automation_name.upper()}")
         print(f"🔍 Analysing test coverage gaps...\n")
 
         existing = existing_scenarios.get("scenarios", [])
@@ -182,4 +182,4 @@ Respond with ONLY this JSON:
 
 
 if __name__ == "__main__":
-    print("Coverage Intelligence Agent — run via orchestrator.py")
+    print("Coverage Intelligence Agent - run via orchestrator.py")

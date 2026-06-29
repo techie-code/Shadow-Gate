@@ -1,7 +1,7 @@
 """
 ShadowGate - Agent 2: Validator Agent
 Checks automation output against test scenarios.
-Rule-based validation — consistent and token-free.
+Rule-based validation - consistent and token-free.
 """
 
 import sys
@@ -29,7 +29,7 @@ class ValidatorAgent:
             result = self._validate_scenario(automation_name, scenario, automation_result)
             results.append(result)
             icon = "✅" if result["status"] == "passed" else "❌"
-            print(f"   {icon} {scenario['name']} — {result['status'].upper()}")
+            print(f"   {icon} {scenario['name']} - {result['status'].upper()}")
 
         passed = len([r for r in results if r["status"] == "passed"])
         failed = len([r for r in results if r["status"] == "failed"])
@@ -57,19 +57,19 @@ class ValidatorAgent:
         return report
 
     def _validate_scenario(self, automation_name, scenario, automation_result):
-        """Rule-based validation — consistent and token-free."""
+        """Rule-based validation - consistent and token-free."""
         scenario_type = scenario.get("type", "")
         processed = automation_result.get("processed", 0)
 
-        # Happy path — passes if automation ran and processed records
+        # Happy path - passes if automation ran and processed records
         if scenario_type == "happy_path":
             passed = processed > 0
 
-        # Edge cases — pass if automation handled without crashing
+        # Edge cases - pass if automation handled without crashing
         elif scenario_type == "edge_case":
             passed = processed > 0
 
-        # Failure scenarios — always pass (errors are caught and logged)
+        # Failure scenarios - always pass (errors are caught and logged)
         elif scenario_type == "failure":
             passed = True
 

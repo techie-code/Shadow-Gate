@@ -33,7 +33,7 @@ class AIBehaviorValidatorAgent:
         Validate AI agent behaviors within the pipeline.
         Returns behavior validation report.
         """
-        print(f"\n🤖 AI Behavior Validator — {automation_name.upper()}")
+        print(f"\n🤖 AI Behavior Validator - {automation_name.upper()}")
         print(f"🔍 Validating AI agent outputs...\n")
 
         validations = []
@@ -166,4 +166,4 @@ class AIBehaviorValidatorAgent:
 
 
 if __name__ == "__main__":
-    print("AI Behavior Validator — run via orchestrator.py")
+    print("AI Behavior Validator - run via orchestrator.py")

@@ -75,7 +75,7 @@ class ChaosAgent:
         chaos_types: list of chaos types to inject, or None for random selection
         Returns chaos report.
         """
-        print(f"\n💥 Chaos Agent — {automation_name.upper()}")
+        print(f"\n💥 Chaos Agent - {automation_name.upper()}")
         print(f"🎯 Injecting failures to find weaknesses...\n")
 
         if chaos_types is None:
@@ -191,7 +191,7 @@ class ChaosAgent:
             return {"success": True, "description": "Set loan_amount to string value for 10 applications"}
 
         elif chaos_type == "api_timeout":
-            return {"success": True, "description": "Simulated credit score API timeout — 30 applications unprocessable"}
+            return {"success": True, "description": "Simulated credit score API timeout - 30 applications unprocessable"}
 
         return {"success": False, "description": "Unknown chaos type"}
 
@@ -252,7 +252,7 @@ class ChaosAgent:
             return {"success": True, "description": "Set malformed dates for 25 transactions"}
 
         elif chaos_type == "api_timeout":
-            return {"success": True, "description": "Simulated fraud scoring API timeout — 50 transactions unscored"}
+            return {"success": True, "description": "Simulated fraud scoring API timeout - 50 transactions unscored"}
 
         return {"success": False, "description": "Unknown chaos type"}
 
@@ -313,7 +313,7 @@ class ChaosAgent:
             return {"success": True, "description": "Set phone to NULL for 8 customers"}
 
         elif chaos_type == "api_timeout":
-            return {"success": True, "description": "Simulated KYC verification API timeout — 20 customers unverifiable"}
+            return {"success": True, "description": "Simulated KYC verification API timeout - 20 customers unverifiable"}
 
         return {"success": False, "description": "Unknown chaos type"}
 

@@ -127,7 +127,7 @@ Write a 2-3 sentence deployment decision summary."""
             print(f"   🚀 SAFE TO DEPLOY TO PRODUCTION")
         else:
             print(f"   ❌ DEPLOYMENT SIGNAL: RED")
-            print(f"   🛑 DO NOT DEPLOY — BLOCKERS FOUND")
+            print(f"   🛑 DO NOT DEPLOY - BLOCKERS FOUND")
         print(f"{'='*55}")
 
         print(f"\n   📊 Overall Confidence: {score}/100")
@@ -178,4 +178,4 @@ Write a 2-3 sentence deployment decision summary."""
 
 
 if __name__ == "__main__":
-    print("Deployment Readiness Agent — run via orchestrator.py")
+    print("Deployment Readiness Agent - run via orchestrator.py")

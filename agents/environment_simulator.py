@@ -43,7 +43,7 @@ class EnvironmentSimulatorAgent:
 
         system_prompt = """You are an expert QA engineer specializing in enterprise automation testing.
 Your job is to read automation requirements and generate comprehensive test scenarios.
-You must respond ONLY with valid JSON — no markdown, no backticks, no explanation.
+You must respond ONLY with valid JSON - no markdown, no backticks, no explanation.
 """
 
         user_prompt = f"""Read these automation requirements and generate test scenarios:
@@ -155,4 +155,4 @@ if __name__ == "__main__":
     if scenarios:
         print(f"\n🎉 Environment Simulator Agent working perfectly!")
     else:
-        print(f"\n❌ Something went wrong — check your GROQ_API_KEY in .env")
+        print(f"\n❌ Something went wrong - check your GROQ_API_KEY in .env")

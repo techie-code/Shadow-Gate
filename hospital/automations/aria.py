@@ -74,7 +74,7 @@ class ARIA:
             "priority": priority,
             "scenarios": scenarios,
             "unknown_risks": unknown_risks,
-            "requires_head_approval": priority in ["P1", "P2"] or len(unknown_risks) > 0,
+            "requires_head_approval": priority in ["P1", "P2"],
             "automation": self.name
         }
 
@@ -254,74 +254,125 @@ If no unknown risks found, return: {{"unknown_risks": []}}"""
             return []
 
     def assign_priority(self, patient, scenarios, unknown_risks):
-        """Assign patient priority based on scenarios and unknown risks."""
+        """
+        Assign priority based on clear clinical rules.
+        Simple, reliable, predictable.
+        """
         vitals = patient.get("vital_signs", {})
-        age = int(patient.get("age", 0))
+        age = int(patient.get("age", 30))
         symptoms = patient.get("symptoms", "").lower()
-        pain_scale = patient.get("pain_scale", 5)
+        pain = int(patient.get("pain_scale", 5))
         history = patient.get("medical_history", [])
 
         try:
-            pain_scale = int(pain_scale)
-        except (TypeError, ValueError):
-            pain_scale = 5
+            hr = int(vitals.get("heart_rate", 80))
+            o2 = int(vitals.get("oxygen_saturation", 98))
+            temp = float(vitals.get("temperature_f", 98.6))
+        except Exception:
+            hr, o2, temp = 80, 98, 98.6
 
-        # Check vital signs
-        heart_rate = vitals.get("heart_rate", 80)
-        o2_sat = vitals.get("oxygen_saturation", 98)
-        temp = vitals.get("temperature_f", 98.6)
-
-        try:
-            heart_rate = int(heart_rate)
-            o2_sat = int(o2_sat)
-            temp = float(temp)
-        except (TypeError, ValueError):
-            heart_rate = 80
-            o2_sat = 98
-            temp = 98.6
-
-        # P1 - Life threatening vitals
-        if (heart_rate > 130 or heart_rate < 40 or
-                o2_sat < 90 or temp > 104 or temp < 95):
+        # P1 - Life threatening vitals or symptoms
+        if hr > 130 or hr < 40 or o2 < 90 or temp > 104:
+            return "P1"
+        p1_words = ["chest pain", "cardiac", "heart attack", "stroke",
+                    "not breathing", "unconscious", "severe bleeding"]
+        if any(w in symptoms for w in p1_words):
+            return "P1"
+        if age > 70 and pain >= 7 and len(history) > 0:
             return "P1"
 
-        # P1 - Life threatening symptoms
-        p1_keywords = ["chest pain", "heart attack", "stroke", "unconscious",
-                       "not breathing", "severe bleeding", "cardiac"]
-        if any(k in symptoms for k in p1_keywords):
-            return "P1"
-
-        # P1 - High risk unknown risks
-        high_risks = [r for r in unknown_risks if r.get("severity") == "HIGH"]
-        if high_risks:
-            return "P1"
-
-        # P1 - Elderly with serious symptoms
-        worst = scenarios.get("worst_case", {})
-        if worst.get("risk_level") == "HIGH" and age > 70:
-            return "P1"
-
-        # P2 - Urgent but not life threatening
-        p2_keywords = ["fever", "infection", "fracture", "breathing difficulty",
-                       "severe pain", "vomiting", "rash", "allergic"]
-        if any(k in symptoms for k in p2_keywords):
+        # P2 - Urgent
+        if age < 5 and temp > 102:
+            return "P2"
+        if pain >= 8:
+            return "P2"
+        if age > 65 and any(w in symptoms for w in ["fever","chest","breathing"]):
             return "P2"
 
-        # P2 - Medium risks or complex history
-        medium_risks = [r for r in unknown_risks if r.get("severity") == "MEDIUM"]
-        if medium_risks and len(history) > 0:
-            return "P2"
-
-        # P3 - Moderate pain or minor illness
-        if pain_scale >= 6:
+        # P3 - Moderate (fever, cold, infection in healthy adults)
+        p3_words = ["fever","cold","cough","sore throat","infection",
+                    "rash","vomiting","headache","back pain","flu"]
+        if any(w in symptoms for w in p3_words):
+            return "P3"
+        if pain >= 5:
             return "P3"
 
-        p3_keywords = ["moderate", "persistent", "headache", "back pain", "cough"]
-        if any(k in symptoms for k in p3_keywords):
-            return "P3"
-
-        # P4 - Minor, non-urgent
+        # P4 - Minor
         return "P4"
+
+    def _ask_ai_for_priority(self, patient, scenarios, unknown_risks):
+        """Ask AI to determine patient priority."""
+        vitals = patient.get("vital_signs", {})
+        high_risks = [r for r in unknown_risks if r.get("severity") == "HIGH"]
+        medium_risks = [r for r in unknown_risks if r.get("severity") == "MEDIUM"]
+
+        system_prompt = """You are a triage nurse with 15 years experience.
+Assign a priority level to this patient based on ALL available information.
+
+Priority levels:
+P1 - CRITICAL: Life threatening. Immediate attention. Examples: chest pain, cardiac event, stroke, oxygen below 90%, severe bleeding, unconscious.
+P2 - URGENT: Serious but stable. Within 30 minutes. Examples: high fever in child, elderly with multiple risks, severe pain 8+, complex drug interactions.
+P3 - MODERATE: Needs attention. Within 2 hours. Examples: mild fever, moderate pain, minor infection, simple illness in healthy adult.
+P4 - NON-URGENT: Minor issue. Within 4 hours. Examples: cold, minor sprain, minor cut, routine check.
+
+Respond with ONLY one of: P1, P2, P3, P4
+Nothing else. Just the priority code."""
+
+        # Build complete unknown risks summary
+        risks_summary = ""
+        if unknown_risks:
+            risks_summary = chr(10).join([
+                f"  [{r.get('severity')}] {r.get('risk')} - {r.get('why_dangerous','')}"
+                for r in unknown_risks
+            ])
+        else:
+            risks_summary = "  None found"
+
+        user_prompt = f"""Complete patient profile for triage assessment:
+
+PATIENT INFORMATION:
+  Name: {patient.get('name', 'Unknown')}
+  Age: {patient.get('age')}
+  Gender: {patient.get('gender', 'Unknown')}
+  Weight: {patient.get('weight_kg', 'Unknown')} kg
+  Lives Alone: {patient.get('lives_alone', False)}
+
+PRESENTING COMPLAINT:
+  Symptoms: {patient.get('symptoms')}
+  Duration: {patient.get('symptom_duration', 'Unknown')}
+  Pain Scale: {patient.get('pain_scale')}/10
+
+VITAL SIGNS:
+  Heart Rate: {vitals.get('heart_rate')} bpm
+  Blood Pressure: {vitals.get('blood_pressure')}
+  Temperature: {vitals.get('temperature_f')}F
+  Oxygen Saturation: {vitals.get('oxygen_saturation')}%
+
+MEDICAL BACKGROUND:
+  Medical History: {', '.join(patient.get('medical_history', [])) or 'None'}
+  Current Medications: {', '.join(patient.get('current_medications', [])) or 'None'}
+  Known Allergies: {', '.join(patient.get('allergies', [])) or 'None'}
+
+CLINICAL SCENARIOS (AI Generated):
+  Best Case: {scenarios.get('best_case', {}).get('diagnosis', 'Unknown')} | Risk: {scenarios.get('best_case', {}).get('risk_level', 'Unknown')} | Treatment: {scenarios.get('best_case', {}).get('recommended_treatment', 'Unknown')}
+  Moderate:  {scenarios.get('moderate_case', {}).get('diagnosis', 'Unknown')} | Risk: {scenarios.get('moderate_case', {}).get('risk_level', 'Unknown')} | Treatment: {scenarios.get('moderate_case', {}).get('recommended_treatment', 'Unknown')}
+  Worst Case:{scenarios.get('worst_case', {}).get('diagnosis', 'Unknown')} | Risk: {scenarios.get('worst_case', {}).get('risk_level', 'Unknown')} | Treatment: {scenarios.get('worst_case', {}).get('recommended_treatment', 'Unknown')}
+
+UNKNOWN RISKS DISCOVERED BY SHADOWGATE ({len(unknown_risks)} total - {len(high_risks)} HIGH, {len(medium_risks)} MEDIUM):
+{risks_summary}
+
+Based on ALL of the above information, what is the correct triage priority?
+Consider everything: vitals, symptoms, age, history, medications, allergies, scenarios AND unknown risks.
+
+Reply with ONLY one of: P1, P2, P3, P4"""
+
+        response = ask_ai(system_prompt, user_prompt, temperature=0.0)
+        # Extract just the priority code
+        response = response.strip().upper()
+        for p in ["P1", "P2", "P3", "P4"]:
+            if p in response:
+                return p
+        return "P3"
 
     def fallback_scenarios(self, patient):
         """Fallback scenarios if AI fails."""

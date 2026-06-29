@@ -1,7 +1,7 @@
 [project]
 name = "shadowgate"
 version = "1.0.0"
-description = "ShadowGate - AI-powered Digital Twin Testing Platform"
+description = "AI-powered hospital automation testing platform. Tests ARIA, SAFE, GUARDIAN and CARA automations. Discovers unknown risks nobody thought to test."
 requires-python = ">=3.12"
 authors = [{ name = "Aishwarya Lakshmi S" }]
 

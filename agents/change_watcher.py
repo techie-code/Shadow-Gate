@@ -39,7 +39,7 @@ class ChangeWatcherAgent:
         Check if automation has changed since last run.
         Returns change report.
         """
-        print(f"\n👁️  Change Watcher Agent — {automation_name.upper()}")
+        print(f"\n👁️  Change Watcher Agent - {automation_name.upper()}")
 
         file_path = WATCH_FILES.get(automation_name)
         if not file_path or not os.path.exists(file_path):
@@ -54,7 +54,7 @@ class ChangeWatcherAgent:
             # First time seeing this file
             self.hashes[automation_name] = current_hash
             self._save_hashes()
-            print(f"   📝 First scan — baseline recorded")
+            print(f"   📝 First scan - baseline recorded")
             return self._first_scan_report(automation_name)
 
         if current_hash == previous_hash:
@@ -88,7 +88,7 @@ class ChangeWatcherAgent:
 
     def check_all(self):
         """Check all automations for changes."""
-        print(f"\n👁️  Change Watcher — Scanning all automations...")
+        print(f"\n👁️  Change Watcher - Scanning all automations...")
         results = {}
         for automation_name in WATCH_FILES:
             results[automation_name] = self.check(automation_name)
@@ -178,7 +178,7 @@ class ChangeWatcherAgent:
             "changed": False,
             "change_type": "first_scan",
             "affected_areas": [],
-            "recommended_tests": ["Run full test suite — baseline established"],
+            "recommended_tests": ["Run full test suite - baseline established"],
             "priority": "low"
         }
 

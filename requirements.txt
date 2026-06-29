@@ -1,7 +1,7 @@
 # ShadowGate - AI-powered Digital Twin Testing Platform
 # Python 3.14 compatible
 
-# Core AI — Groq (free tier)
+# Core AI - Groq (free tier)
 groq>=0.9.0
 langchain-groq>=0.1.0
 langchain>=0.2.0
