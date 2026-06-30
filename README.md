@@ -3,8 +3,6 @@ AI-Powered Hospital Automation Testing Platform
 
 We test what you know. We discover what you don't.
 
-Built for UiPath AgentHack 2026 - Track 3: UiPath Test Cloud
-
 ## What is ShadowGate?
 
 ShadowGate is an AI-powered testing platform that validates hospital automation workflows before they go live. It tests four critical hospital automations across 8 stages, discovers unknown risks nobody thought to test, and keeps humans in the loop at every critical decision point.
@@ -251,8 +249,3 @@ When treatment is complete, the doctor submits a discharge form. CARA checks eve
 
 Note: the full pipeline runs and has been verified end-to-end via direct local execution (`python main.py` and direct invocation of the entrypoint function). The UiPath serverless Debug environment currently returns a `PrepareEnvironmentError` during package installation, a known limitation of the Coded Agent (Preview) feature that we are continuing to work through with UiPath.
 
-## License
-
-MIT License
-
-ShadowGate - UiPath AgentHack 2026
