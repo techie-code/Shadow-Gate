@@ -1,12 +1,21 @@
 [project]
-name = "shadowgate"
+name = "ShadowGate"
 version = "1.0.0"
-description = "AI-powered hospital automation testing platform. Tests ARIA, SAFE, GUARDIAN and CARA automations. Discovers unknown risks nobody thought to test."
-requires-python = ">=3.12"
-authors = [{ name = "Aishwarya Lakshmi S" }]
-
+description = "AI-powered hospital automation testing platform"
+authors =  [{ name = "Aishwarya Lakshmi S" }]
+requires-python = ">=3.10"
+dependencies = [
+    "requests>=2.31.0",
+    "python-dotenv>=1.0.0",
+    "flask>=3.0.0",
+    "flask-cors>=4.0.0",
+    "pydantic>=2.6.0",
+    "groq>=0.9.0",
+    "langchain-groq>=0.1.0",
+    "langchain>=0.2.0",
+    "langchain-core>=0.2.0"
+]
 
 [build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
