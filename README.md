@@ -1,5 +1,5 @@
 # ShadowGate
-AI-Powered Hospital Automation Testing Platform
+AI-Powered Hospital Automation Testing Platform 
 
 We test what you know. We discover what you don't.
 
