@@ -3,7 +3,7 @@ AI-Powered Hospital Automation Testing Platform
 
 We test what you know. We discover what you don't.
 
-## What is ShadowGate?
+## What is ShadowGate? 
 
 ShadowGate is an AI-powered testing platform that validates hospital automation workflows before they go live. It tests four critical hospital automations across 8 stages, discovers unknown risks nobody thought to test, and keeps humans in the loop at every critical decision point.
 
